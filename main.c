@@ -2,5 +2,5 @@
 #include <stdlib.h>
 
 void main(void){
-    printf("first commit, Hello Github");
+    printf("secondi commit, Hello Github");
 }
