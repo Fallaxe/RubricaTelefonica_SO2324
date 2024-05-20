@@ -7,6 +7,9 @@
 
 */
 
+char *benvenuto = "Benvenuto client";
+char *scelte = "1)visita \n2)modifica\n3)esci";
+
 void printMenu(); //manda il menu' al client
 int choiseHandler(); //gestisce la richiesta restituendo l'intero corrispondete
 void printContent(); //manda i contatti presenti sul server
