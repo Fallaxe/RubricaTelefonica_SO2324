@@ -7,11 +7,20 @@
 
 */
 
-char *benvenuto = "Benvenuto client";
-char *scelte = "1)visita \n2)modifica\n3)esci";
+#define SERVERPORT 12345
+#define SERVERADDRESS "127.0.0.1"
 
-void printMenu(); //manda il menu' al client
-int choiseHandler(); //gestisce la richiesta restituendo l'intero corrispondete
+#define BUFFER_MAX 32
+#define MAX_CLIENT 5
+
+char *benvenuto = "Benvenuto client";
+char *scelte = "v - visita \nl - login admin\nx - esci";
+char *scelteAdmin = "m - modifica";
+char *visita = "inserisci il nome del contatto ricercato: ";
+
+
+void sendMenu(); //manda il menu' al client
+int choiseHandler(char*); //gestisce la richiesta restituendo l'intero corrispondete
 void printContent(); //manda i contatti presenti sul server
 
 /*solo admin*/
