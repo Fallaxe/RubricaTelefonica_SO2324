@@ -15,3 +15,9 @@
     prova
 */
 
+#define SERVERPORT 12345
+#define SERVERADDRESS "127.0.0.1"
+
+#define BUFFER_MAX 1024
+
+char *home = "h";

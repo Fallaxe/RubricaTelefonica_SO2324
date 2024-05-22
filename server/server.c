@@ -17,32 +17,37 @@
 
 void sendMenu(int connectSocket)
 {
-    send(connectSocket,benvenuto,strlen(benvenuto),0);
-    send(connectSocket,scelte,strlen(scelte),0);
+    char msg[BUFFER_MAX];
+    strcpy(msg, benvenuto);
+    strcat(msg, scelte);
+    send(connectSocket, msg, sizeof(msg), 0);
 }
 
-int choiseHandler(char *choise)
+int choiseHandler(int connectSocket, char *choise)
 {
     switch(*choise)
     {
-    case 'v':
-        printf("%s",visita);
+    case 'h':
+        sendMenu(connectSocket);
         break;
-    case 'l':
-        printf("login admin");
-        break;
+    //case 'v':
+    //    printf("%s",visita);
+    //    break;
+    //case 'l':
+    //    printf("login admin");
+    //    break;
     case 'x':
-        printf("esci");
         break;
-    case 'm':
+    //case 'm':
         /* test sul flag se sei admin;
         */
-        break;
+    //    break;
     // case 5:
     //     break;
     // case 6:
     //     break;
     default:
+        sendMenu(connectSocket);
         break;
     }
 }
@@ -93,7 +98,27 @@ void main(int argc, char const *argv[])
             clientIP = inet_ntoa(clientAddress.sin_addr);
             printf("client connected! @ %s : %d\n",clientIP, connectSocket);
 
-            sendMenu(connectSocket);
+            while(1) {
+                // attende richiesta dal client                
+                if((returnCode = recv(connectSocket, buffer, BUFFER_MAX, 0)) < 0) {
+                    printf("Errore nella ricezione dei dati.\n");
+                } else {
+                    buffer[returnCode] = '\0';
+                    printf("Client: %s\n" ,buffer);
+                }
+          
+                // gestione delle richieste                
+                choiseHandler(connectSocket, buffer);
+                
+                if(strcmp(buffer, "x") == 0) {
+                    send(connectSocket, buffer, sizeof(buffer), 0);
+                    close(connectSocket);
+                    printf("Client @ %s disconnesso.\n", clientIP);
+                    break;
+                }
+                
+            }
+
         }   
         else 
             close(connectSocket); 
