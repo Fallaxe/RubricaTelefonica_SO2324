@@ -1,3 +1,5 @@
 *.[oa]
-.vscode/
 *.txt
+.vscode/
+bin/
+build/
