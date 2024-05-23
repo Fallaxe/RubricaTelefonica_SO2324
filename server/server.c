@@ -25,6 +25,9 @@ void sendMenu(int connectSocket)
 
 int choiseHandler(int connectSocket, char *choise)
 {
+    int returnCode;
+    char buffer[BUFFER_MAX];
+
     switch(*choise)
     {
     case 'h':
@@ -33,9 +36,18 @@ int choiseHandler(int connectSocket, char *choise)
     //case 'v':
     //    printf("%s",visita);
     //    break;
-    //case 'l':
-    //    printf("login admin");
-    //    break;
+    case 'l':
+        send(connectSocket,choise, sizeof(choise),0);
+
+        if((returnCode = recv(connectSocket, buffer, BUFFER_MAX, 0)) < 0) {
+            printf("Errore nella ricezione dei dati.\n");
+        } else {
+            buffer[returnCode] = '\0';
+            // parsehere the space " "
+            printf("Client: %s\n" ,buffer);
+        }
+
+        break;
     case 'x':
         break;
     //case 'm':

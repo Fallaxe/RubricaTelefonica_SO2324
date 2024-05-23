@@ -15,7 +15,9 @@ int main(int argc, char * argv[]) {
   
     /* buffer bidirezionale per messaggi */
     char buffer[BUFFER_MAX];
-  
+
+    printf("argc = %d\n", argc);
+    
     /* apertura socket del client */
     if ((clientSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Errore nella creazione socket()");
@@ -34,8 +36,19 @@ int main(int argc, char * argv[]) {
     }
   
     printf("Sei connesso a %s\n", SERVERADDRESS);
-    send(clientSocket, home, strlen(home), 0);
-  
+    if(argc >= 4){
+        parser(argv,argc);
+        
+        send(clientSocket, "l", strlen("l"), 0);
+
+        strcpy(buffer, cred.user);
+        strcat(buffer," ");
+        strcat(buffer,cred.password);
+
+        send(clientSocket, buffer, sizeof(buffer), 0);
+    }
+    else send(clientSocket, home, strlen(home), 0);
+    
     while(1){
         /* attende risposta dal server */
         if((returnCode = recv(clientSocket, buffer, BUFFER_MAX, 0)) < 0) {
@@ -58,4 +71,45 @@ int main(int argc, char * argv[]) {
     }
   
     return(0);
+}
+
+int login(char *user, char *password)
+{
+
+
+    return 0;
+}
+
+void parser(char *argomenti[],int max){
+    // printf("%s", argomenti[1]);
+    // printf("%s", argomenti[2]);
+    // printf("%s", argomenti[3]);
+    int i;
+    for (i = 1; i < max-3; i++)
+    {
+        if(strcmp(argomenti[i],"-a")){
+            strcpy(cred.user,argomenti[i+2]);
+            strcpy(cred.password, argomenti[i+3]);
+            printf("user: %s\n", cred.user);
+            printf("pass: %s\n", cred.password);
+            break;
+        }
+        
+    }
+
+    if(i == max-3){
+        printf("Usare: -a user password\n");
+        exit(1);
+    }
+
+    
+    
+
+    // if(strcmp(argomenti[1],"-a") == 0){
+    //     //printf("è vero bro\n");
+    //     strcpy(cred.user,argomenti[2]);
+    //     strcpy(cred.password, argomenti[3]);
+    //     printf("user: %s\n", cred.user);
+    //     printf("pass: %s\n", cred.password);
+    // }
 }

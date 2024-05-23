@@ -15,9 +15,25 @@
     prova
 */
 
+#include <stdlib.h>
+
 #define SERVERPORT 12345
 #define SERVERADDRESS "127.0.0.1"
 
 #define BUFFER_MAX 1024
 
 char *home = "h";
+//char *credenziali[2];
+
+
+typedef struct credenziali
+{
+    char user[25];
+    char password[25];
+} t_credenziali;
+
+t_credenziali cred = {.user="", .password=""};
+
+
+int login(char *user, char *password);
+void parser(char *argomenti[], int max);
