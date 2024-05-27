@@ -36,6 +36,10 @@ int main(int argc, char * argv[]) {
     }
   
     printf("Sei connesso a %s\n", SERVERADDRESS);
+
+    /* AVVIO DELLA CONNESSIONE:
+    *  1) viene mandato h se non si passa parametri, senno si manda -l
+    */
     if(argc >= 4){
         parser(argv,argc);
         
@@ -47,7 +51,7 @@ int main(int argc, char * argv[]) {
 
         send(clientSocket, buffer, sizeof(buffer), 0);
     }
-    else send(clientSocket, home, strlen(home), 0);
+    else send(clientSocket, home, strlen(home), 0); 
     
     while(1){
         /* attende risposta dal server */
@@ -55,6 +59,16 @@ int main(int argc, char * argv[]) {
             printf("Errore nella ricezione dei dati.\n");
         } else {
             buffer[returnCode] = '\0';
+
+            // if(strcmp(buffer, "l") == 0) {
+            //     strcpy(buffer, cred.user);
+            //     strcat(buffer," ");
+            //     strcat(buffer,cred.password);
+            //     send(clientSocket, buffer, sizeof(buffer), 0);
+            // } else {
+            //     printf("Server:\n%s\n" ,buffer);
+            // }
+
             if(strcmp(buffer, "x") == 0) {
                 close(clientSocket);
                 printf("Disconnesso da %s\n", SERVERADDRESS);
@@ -62,6 +76,7 @@ int main(int argc, char * argv[]) {
             } else {
                 printf("Server:\n%s\n" ,buffer);
             }
+            
         }
     
         /* manda messaggio al server */

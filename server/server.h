@@ -6,6 +6,15 @@
     sennò si gestisce un visitatore normale;
 
 */
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <string.h>
+#include <signal.h>
 
 #define SERVERPORT 12345
 #define SERVERADDRESS "127.0.0.1"
@@ -22,6 +31,7 @@ char *visita = "inserisci il nome del contatto ricercato: ";
 void sendMenu(); //manda il menu' al client
 int choiseHandler(); //gestisce la richiesta restituendo l'intero corrispondete
 void printContent(); //manda i contatti presenti sul server
+void parserLogin(char credenziali[]);
 
 /*solo admin*/
 void addContact(); //aggiunge un nuovo contatto (aggiungo qui la richiesta di admin-mode?)

@@ -6,14 +6,8 @@
 */
 
 #include "server.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <string.h>
+
+int serverSocket;
 
 void sendMenu(int connectSocket)
 {
@@ -27,6 +21,7 @@ int choiseHandler(int connectSocket, char *choise)
 {
     int returnCode;
     char buffer[BUFFER_MAX];
+    char * msg;
 
     switch(*choise)
     {
@@ -37,14 +32,16 @@ int choiseHandler(int connectSocket, char *choise)
     //    printf("%s",visita);
     //    break;
     case 'l':
-        send(connectSocket,choise, sizeof(choise),0);
-
+        msg = "Inserire user e password: ";
+        send(connectSocket,msg, strlen(msg),0);
         if((returnCode = recv(connectSocket, buffer, BUFFER_MAX, 0)) < 0) {
             printf("Errore nella ricezione dei dati.\n");
         } else {
             buffer[returnCode] = '\0';
-            // parsehere the space " "
-            printf("Client: %s\n" ,buffer);
+            printf("Client: %s\n", buffer);
+            // controllo user password
+            msg = "sei entrato";
+            send(connectSocket, msg, strlen(msg), 0);
         }
 
         break;
@@ -64,11 +61,19 @@ int choiseHandler(int connectSocket, char *choise)
     }
 }
 
+void customSigHandler(){
+    printf("addio\n");
+    close(serverSocket);
+    exit(1);
+}
 
 
 void main(int argc, char const *argv[])
 {
-    int serverSocket, connectSocket, returnCode;
+    void (*handler) (int);
+
+    
+    int connectSocket, returnCode;
     socklen_t clientAddressLen;
     struct sockaddr_in serverAddress, clientAddress;
     char buffer[BUFFER_MAX];
@@ -78,6 +83,8 @@ void main(int argc, char const *argv[])
         perror("errore nella creazione del socket!");
         exit(serverSocket);
     }   
+
+    signal(SIGINT,customSigHandler);
 
     serverAddress.sin_family = AF_INET;         // IPv4
     serverAddress.sin_port = htons(SERVERPORT); // su quale porta apriamo
@@ -128,6 +135,9 @@ void main(int argc, char const *argv[])
                     printf("Client @ %s disconnesso.\n", clientIP);
                     break;
                 }
+
+                fflush(stdout);
+                fflush(stdin);
                 
             }
 
@@ -136,5 +146,10 @@ void main(int argc, char const *argv[])
             close(connectSocket); 
     }
     
+
+}
+
+void parserLogin(char credenziali[])
+{
 
 }
