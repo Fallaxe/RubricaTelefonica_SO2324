@@ -45,11 +45,20 @@ int main(int argc, char * argv[]) {
         
         send(clientSocket, "l", strlen("l"), 0);
 
+        if((returnCode = recv(clientSocket, buffer, BUFFER_MAX, 0)) < 0) {
+            printf("Errore nella ricezione dei dati.\n");
+        }
+        
         strcpy(buffer, cred.user);
         strcat(buffer," ");
         strcat(buffer,cred.password);
 
         send(clientSocket, buffer, sizeof(buffer), 0);
+    }
+    else if (argc > 1)
+    {
+        printf("User e password non corretti.\n");
+        send(clientSocket, home, strlen(home), 0);
     }
     else send(clientSocket, home, strlen(home), 0); 
     
@@ -112,7 +121,7 @@ void parser(char *argomenti[],int max){
         
     }
 
-    if(i == max-3){
+    if(i == max-2){
         printf("Usare: -a user password\n");
         exit(1);
     }
