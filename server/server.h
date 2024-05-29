@@ -15,15 +15,29 @@
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
+#include <fcntl.h>
 
 #define SERVERPORT 12345
 #define SERVERADDRESS "127.0.0.1"
 
 #define BUFFER_MAX 1024
 #define MAX_CLIENT 5
+#define FILE_USERS "password.txt"
 
+typedef struct MSG {
+    int isAdmin;
+    char message[BUFFER_MAX];
+} MSG;
+
+typedef struct credenziali
+{
+    char user[25];
+    char password[25];
+} t_credenziali;
+
+t_credenziali cred;
 char *benvenuto = "Benvenuto client\n";
-char *scelte = "v - visita \nl - login admin\nx - esci";
+char *scelte = "v - visita \nl - login admin\nx - esci\nCosa vuoi fare?\t";
 char *scelteAdmin = "m - modifica";
 char *visita = "inserisci il nome del contatto ricercato: ";
 
@@ -31,7 +45,8 @@ char *visita = "inserisci il nome del contatto ricercato: ";
 void sendMenu(); //manda il menu' al client
 int choiseHandler(); //gestisce la richiesta restituendo l'intero corrispondete
 void printContent(); //manda i contatti presenti sul server
-void parserLogin(char credenziali[]);
+void login();
+int verifica(t_credenziali cred);
 
 /*solo admin*/
 void addContact(); //aggiunge un nuovo contatto (aggiungo qui la richiesta di admin-mode?)

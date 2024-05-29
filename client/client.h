@@ -16,15 +16,23 @@
 */
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <string.h>
+#include <unistd.h>
 
 #define SERVERPORT 12345
 #define SERVERADDRESS "127.0.0.1"
 
 #define BUFFER_MAX 1024
 
-char *home = "h";
-//char *credenziali[2];
-
+typedef struct MSG {
+    int isAdmin;
+    char message[BUFFER_MAX];
+} MSG;
 
 typedef struct credenziali
 {
@@ -32,8 +40,9 @@ typedef struct credenziali
     char password[25];
 } t_credenziali;
 
-t_credenziali cred = {.user="", .password=""};
+t_credenziali cred;
+char *home = "h";
 
-
-int login(char *user, char *password);
-void parser(char *argomenti[], int max);
+void login(int socket, MSG buffer);
+int parser(char *argomenti[], int max);
+void requestHome(int socket, MSG buffer);
