@@ -11,11 +11,12 @@ int serverSocket;
 
 void sendMenu(int connectSocket, MSG buffer)
 {
+    strcat(buffer.message, scelte);
     if (buffer.isAdmin == 1) {
-        strcat(buffer.message, scelte); // <-- qui va inserito il menu da admin
-    } else {
-        strcat(buffer.message, scelte);
+        strcat(buffer.message, scelteadmin); // <-- qui va inserito il menu da admin
     }
+    strcat(buffer.message, sceltaUscita);
+
     send(connectSocket,&buffer, sizeof(buffer), 0);
 }
 
@@ -33,11 +34,11 @@ int verifica(t_credenziali cred) {
             if ((strcmp(cred.user, admin.user) == 0) && (strcmp(cred.password, admin.password) == 0)) {
                 login = 1;
                 printf("Login effettuato.\n");
-                break;                               
+                break;                         
             }
         }
     }
-    if (login == 0) printf("Login non effettato.\n");
+    if (login == 0) printf("Login non effettuato.\n");
     fclose(fptr);
     return login;
 }
@@ -109,6 +110,27 @@ int choiseHandler(int connectSocket, MSG choise)
             strcpy(buffer.message, "Non hai l'autorizzazione a modificare.\n");
         }
         sendMenu(connectSocket, buffer);
+
+        cJSON *json = cJSON_CreateObject();
+        cJSON_AddStringToObject(json, "name", "John Doe"); 
+        cJSON_AddNumberToObject(json, "age", 30); 
+        cJSON_AddStringToObject(json, "email", "john.doe@example.com");
+
+        char *json_str = cJSON_Print(json);
+
+         // write the JSON string to a file 
+        FILE *fp = fopen("data.json", "w"); 
+        if (fp == NULL) { 
+            printf("impossibile aprire il file dei dati\n"); 
+            return 1; 
+        }
+        printf("%s\n", json_str); 
+        fputs(json_str, fp); 
+        fclose;
+        // free the JSON string and cJSON object 
+        cJSON_free(json_str); 
+        cJSON_Delete(json);
+        
         break;
     //    break;
     // case 5:

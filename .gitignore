@@ -1,5 +1,6 @@
 *.[oa]
 *.txt
+*.json
 .vscode/
 bin/
 build/

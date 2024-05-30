@@ -16,6 +16,8 @@
 #include <string.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <cjson/cJSON.h> //installabile via package manager
+#include <cjson/cJSON_Utils.h>
 
 #define SERVERPORT 12345
 #define SERVERADDRESS "127.0.0.1"
@@ -37,7 +39,9 @@ typedef struct credenziali
 
 t_credenziali cred;
 char *benvenuto = "Benvenuto client\n";
-char *scelte = "v - visita \nl - login admin\nx - esci\nCosa vuoi fare?\t";
+char *scelte = "v - visita \nl - login admin\n";
+char *scelteadmin= "m - modifica\n";
+char *sceltaUscita = "x - esci\nCosa vuoi fare?\t";
 char *scelteAdmin = "m - modifica";
 char *visita = "inserisci il nome del contatto ricercato: ";
 
