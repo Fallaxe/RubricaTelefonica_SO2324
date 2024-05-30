@@ -111,13 +111,22 @@ int choiseHandler(int connectSocket, MSG choise)
         }
         sendMenu(connectSocket, buffer);
 
-        cJSON *json = cJSON_CreateObject();
-        cJSON_AddStringToObject(json, "name", "John Doe"); 
-        cJSON_AddNumberToObject(json, "age", 30); 
-        cJSON_AddStringToObject(json, "email", "john.doe@example.com");
+        //creazione di un oggetto "item" che poi verrà aggiunto all'array
+        //TODO: oggetto con input da client
+        //PROBLEMA: la modifica al "data.json" NON appare prima della chiusura del server.
+        //SOLUZIONE: fflush() prima del fclose Quindi NON cancellarlo!
+        cJSON *jsonItem = cJSON_CreateObject();
+        cJSON_AddStringToObject(jsonItem, "name", "John Doe"); 
+        cJSON_AddNumberToObject(jsonItem, "age", 30); 
+        cJSON_AddStringToObject(jsonItem, "email", "ajohn.doe@example.com");
 
-        char *json_str = cJSON_Print(json);
+        //creazione array di  oggetti json
+        cJSON *jsonArray = cJSON_CreateArray();
+        cJSON_AddItemToArray(jsonArray,jsonItem);
 
+        //creazione di una stringa in formato json con tutti gli oggetti
+        char *json_str = cJSON_Print(jsonArray);
+        
          // write the JSON string to a file 
         FILE *fp = fopen("data.json", "w"); 
         if (fp == NULL) { 
@@ -126,10 +135,12 @@ int choiseHandler(int connectSocket, MSG choise)
         }
         printf("%s\n", json_str); 
         fputs(json_str, fp); 
+        fflush(fp);
         fclose;
         // free the JSON string and cJSON object 
-        cJSON_free(json_str); 
-        cJSON_Delete(json);
+        cJSON_free(json_str);
+        //cJSON_Delete(jsonArray);
+        cJSON_Delete(jsonItem);
         
         break;
     //    break;
