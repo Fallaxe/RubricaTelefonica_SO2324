@@ -16,8 +16,8 @@
 #include <string.h>
 #include <signal.h>
 #include <fcntl.h>
-#include <cjson/cJSON.h> //installabile via package manager
-#include <cjson/cJSON_Utils.h>
+#include "../vendor/cjson/cJSON.h" //installabile via package manager
+#include "../vendor/cjson/cJSON_Utils.h"
 
 #define SERVERPORT 12345
 #define SERVERADDRESS "127.0.0.1"
