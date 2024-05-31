@@ -44,6 +44,7 @@ int main(int argc, char * argv[]) {
     
     while(1){
         /* attende risposta dal server */
+        /* aggiunti per capire meglio dei [client/server] al printf, poi si levano magari*/
         if((recv(clientSocket, &buffer, sizeof(buffer), 0)) < 0) {
             printf("Errore nella ricezione dei dati.\n");
         } else {
@@ -53,11 +54,12 @@ int main(int argc, char * argv[]) {
                 printf("Disconnesso da %s\n", SERVERADDRESS);
                 exit(0);
             } else {
-                printf("\n%s", buffer.message);
+                printf("\n[server said]>>%s", buffer.message);
             }
         }
     
         /* manda messaggio al server */
+        printf("\n[Write Prompt]>>");
         scanf("%s", buffer.message);
         send(clientSocket, &buffer, sizeof(buffer), 0);
     }

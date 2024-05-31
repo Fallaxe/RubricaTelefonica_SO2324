@@ -31,6 +31,12 @@ typedef struct MSG {
     char message[BUFFER_MAX];
 } MSG;
 
+typedef struct person{
+    char name[25];
+    int age;
+    char email[25];
+}t_person;
+
 typedef struct credenziali
 {
     char user[25];
@@ -49,8 +55,10 @@ char *visita = "inserisci il nome del contatto ricercato: ";
 void sendMenu(); //manda il menu' al client
 int choiseHandler(); //gestisce la richiesta restituendo l'intero corrispondete
 void printContent(); //manda i contatti presenti sul server
-void login();
+void login(int connectSocket, MSG buffer);
 int verifica(t_credenziali cred);
+void readContacts();
 
 /*solo admin*/
 void addContact(); //aggiunge un nuovo contatto (aggiungo qui la richiesta di admin-mode?)
+void aggiungiPersona(int connectSocket, MSG buffer);

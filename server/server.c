@@ -43,6 +43,46 @@ int verifica(t_credenziali cred) {
     return login;
 }
 
+void readContacts()
+{
+// TODO: c'è solo un prototipo di come fare letto su internet
+//       in particolare va riletta tutta la cosa e fatto il parsing con le funzioni cJSON.
+//       probabilmente prima va letto che è un array di oggetti e poi gli item uno ad uno.
+//         // open the file 
+//     FILE *fp = fopen("data.json", "r"); 
+//     if (fp == NULL) { 
+//         printf("Error: Unable to open the file.\n"); 
+//         //return 1;
+//         exit(42); 
+//     } 
+  
+//     // read the file contents into a string 
+//     char buffer[1024]; 
+//     int len = fread(buffer, 1, sizeof(buffer), fp); 
+//     fclose(fp); 
+
+//     // parse the JSON data 
+//     cJSON *json = cJSON_Parse(buffer); 
+//     if (json == NULL) { 
+//         const char *error_ptr = cJSON_GetErrorPtr(); 
+//         if (error_ptr != NULL) { 
+//             printf("Error: %s\n", error_ptr); 
+//         } 
+//         cJSON_Delete(json); 
+//         return 1; 
+//     } 
+  
+//     // access the JSON data 
+//     cJSON *name = cJSON_GetObjectItemCaseSensitive(json, "name"); 
+//     if (cJSON_IsString(name) && (name->valuestring != NULL)) { 
+//         printf("Name: %s\n", name->valuestring); 
+//     } 
+  
+//     // delete the JSON object 
+//     cJSON_Delete(json); 
+//     return 0;
+}
+
 void login(int connectSocket, MSG buffer){
         if(buffer.isAdmin == 1) {
             strcpy(buffer.message, "Sei già loggato.\n");
@@ -83,6 +123,74 @@ void login(int connectSocket, MSG buffer){
         sendMenu(connectSocket, buffer);
 }
 
+void aggiungiPersona(int connectSocket, MSG buffer){
+        //PROBLEMA: la modifica al "data.json" NON appare prima della chiusura del server.
+        //SOLUZIONE: fflush() prima del fclose Quindi NON cancellarlo!
+        //TODO: per il momento aggiunge e basta un oggetto al file, va fatto si che lo aggiunga
+        //      all'array di item nel file, allo stato attuale sovrascrive l'intero file!
+        //      1) lettura del file al boot del server?
+        //      2) lettura del file solo su 'm'
+
+        t_person persona;
+
+        strcpy(buffer.message, "puoi modificare!\nInserire nome del contatto :\t");
+        send(connectSocket,&buffer, sizeof(buffer),0);
+
+        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+            printf("Errore nella ricezione dei dati.\n");
+        } else {
+            strcpy(persona.name, buffer.message); 
+            printf("Client - New contact: %s\n", buffer.message);
+        }
+
+        strcpy(buffer.message, "Inserire eta del contatto :\t");
+        send(connectSocket,&buffer, sizeof(buffer),0);
+
+        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+            printf("Errore nella ricezione dei dati.\n");
+        } else {
+            persona.age = atoi(buffer.message);
+            printf("Client - New contact: %s\n", buffer.message);
+        }
+
+        strcpy(buffer.message, "Inserire email del contatto :\t");
+        send(connectSocket,&buffer, sizeof(buffer),0);
+
+        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+            printf("Errore nella ricezione dei dati.\n");
+        } else {
+            strcpy(persona.email, buffer.message);
+            printf("Client - New contact: %s\n", buffer.message);
+        }
+
+        cJSON *jsonItem = cJSON_CreateObject();
+        cJSON_AddStringToObject(jsonItem, "name", persona.name); 
+        cJSON_AddNumberToObject(jsonItem, "age", persona.age); 
+        cJSON_AddStringToObject(jsonItem, "email", persona.email);
+
+        //creazione array di  oggetti json
+        cJSON *jsonArray = cJSON_CreateArray();
+        cJSON_AddItemToArray(jsonArray,jsonItem);
+
+        //creazione di una stringa in formato json con tutti gli oggetti
+        char *json_str = cJSON_Print(jsonArray);
+        
+         // write the JSON string to a file 
+        FILE *fp = fopen("data.json", "w"); 
+        if (fp == NULL) { 
+            printf("impossibile aprire il file dei dati\n"); 
+            exit(42);
+        }
+        printf("%s\n", json_str); 
+        fputs(json_str, fp); 
+        fflush(fp);
+        fclose;
+        // free the JSON string and cJSON object 
+        cJSON_free(json_str);
+        //cJSON_Delete(jsonArray);
+        cJSON_Delete(jsonItem);
+}
+
 int choiseHandler(int connectSocket, MSG choise)
 {
     MSG buffer;
@@ -105,43 +213,12 @@ int choiseHandler(int connectSocket, MSG choise)
     case 'm': // Per ora ho fatto solo il test per vedere se sei admin
         // test sul flag se sei admin
         if (choise.isAdmin == 1){
-            strcpy(buffer.message, "Puoi modificare.\n");
+            aggiungiPersona(connectSocket, buffer);
+            strcpy(buffer.message, ""); //pulisce buffer
         } else {
             strcpy(buffer.message, "Non hai l'autorizzazione a modificare.\n");
         }
         sendMenu(connectSocket, buffer);
-
-        //creazione di un oggetto "item" che poi verrà aggiunto all'array
-        //TODO: oggetto con input da client
-        //PROBLEMA: la modifica al "data.json" NON appare prima della chiusura del server.
-        //SOLUZIONE: fflush() prima del fclose Quindi NON cancellarlo!
-        cJSON *jsonItem = cJSON_CreateObject();
-        cJSON_AddStringToObject(jsonItem, "name", "John Doe"); 
-        cJSON_AddNumberToObject(jsonItem, "age", 30); 
-        cJSON_AddStringToObject(jsonItem, "email", "ajohn.doe@example.com");
-
-        //creazione array di  oggetti json
-        cJSON *jsonArray = cJSON_CreateArray();
-        cJSON_AddItemToArray(jsonArray,jsonItem);
-
-        //creazione di una stringa in formato json con tutti gli oggetti
-        char *json_str = cJSON_Print(jsonArray);
-        
-         // write the JSON string to a file 
-        FILE *fp = fopen("data.json", "w"); 
-        if (fp == NULL) { 
-            printf("impossibile aprire il file dei dati\n"); 
-            return 1; 
-        }
-        printf("%s\n", json_str); 
-        fputs(json_str, fp); 
-        fflush(fp);
-        fclose;
-        // free the JSON string and cJSON object 
-        cJSON_free(json_str);
-        //cJSON_Delete(jsonArray);
-        cJSON_Delete(jsonItem);
-        
         break;
     //    break;
     // case 5:
