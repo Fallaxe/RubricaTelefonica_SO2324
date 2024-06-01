@@ -60,7 +60,11 @@ int main(int argc, char * argv[]) {
     
         /* manda messaggio al server */
         printf("\n[Write Prompt]>>");
-        scanf("%s", buffer.message);
+        fgets(buffer.message, BUFFER_MAX, stdin);
+
+        if ((strlen(buffer.message) > 0) && (buffer.message[strlen(buffer.message) - 1] == '\n'))
+            buffer.message[strlen (buffer.message) - 1] = '\0';
+        
         send(clientSocket, &buffer, sizeof(buffer), 0);
     }
   
