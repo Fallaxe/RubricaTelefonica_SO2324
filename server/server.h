@@ -46,9 +46,8 @@ typedef struct credenziali
 t_credenziali cred;
 char *benvenuto = "Benvenuto client\n";
 char *scelte = "v - visita \nl - login admin\n";
-char *scelteadmin= "m - modifica\n";
+char *scelteadmin= "a - aggiungi contatto\nm - modifica\n";
 char *sceltaUscita = "x - esci\nCosa vuoi fare?\t";
-char *scelteAdmin = "m - modifica";
 char *visita = "inserisci il nome del contatto ricercato: ";
 
 

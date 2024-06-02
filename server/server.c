@@ -131,15 +131,41 @@ void aggiungiPersona(int connectSocket, MSG buffer){
         //      1) lettura del file al boot del server?
         //      2) lettura del file solo su 'm'
 
-        t_person persona;
+        //t_person persona;  // <- se li mettiamo direttamente sul json non serve
+        
+        // Legge Array con i Contatti ##############################
+        cJSON *jsonArray;
+        char fileContent[1024];
 
-        strcpy(buffer.message, "puoi modificare!\nInserire nome del contatto :\t");
+        // apre file data in lettura
+        FILE *fp = fopen("data.json", "r"); 
+        if (fp == NULL) {
+            // se il database non esiste
+            jsonArray = cJSON_CreateArray();
+        } else {  
+            // legge il file su una stringa 
+            int len = fread(fileContent, 1, sizeof(fileContent), fp);
+            fclose(fp);
+  
+            // parse della string con JSON
+            jsonArray = cJSON_Parse(fileContent); 
+            if (jsonArray == NULL) {
+                // se database esiste ma è vuoto (tipo se diamo la possibilità di eliminare contatti)
+                jsonArray = cJSON_CreateArray();
+            }
+        }
+        //#######################################################
+
+        cJSON *jsonItem = cJSON_CreateObject();
+
+        strcpy(buffer.message, "Nuovo Contatto\nInserire nome del contatto :\t");
         send(connectSocket,&buffer, sizeof(buffer),0);
 
         if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
             printf("Errore nella ricezione dei dati.\n");
         } else {
-            strcpy(persona.name, buffer.message); 
+            //strcpy(persona.name, buffer.message);
+            cJSON_AddStringToObject(jsonItem, "name", buffer.message);
             printf("Client - New contact: %s\n", buffer.message);
         }
 
@@ -149,7 +175,8 @@ void aggiungiPersona(int connectSocket, MSG buffer){
         if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
             printf("Errore nella ricezione dei dati.\n");
         } else {
-            persona.age = atoi(buffer.message);
+            //persona.age = atoi(buffer.message);
+            cJSON_AddNumberToObject(jsonItem, "age", atoi(buffer.message));
             printf("Client - New contact: %s\n", buffer.message);
         }
 
@@ -159,30 +186,32 @@ void aggiungiPersona(int connectSocket, MSG buffer){
         if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
             printf("Errore nella ricezione dei dati.\n");
         } else {
-            strcpy(persona.email, buffer.message);
+            //strcpy(persona.email, buffer.message);
+            cJSON_AddStringToObject(jsonItem, "email", buffer.message);
             printf("Client - New contact: %s\n", buffer.message);
         }
 
-        cJSON *jsonItem = cJSON_CreateObject();
-        cJSON_AddStringToObject(jsonItem, "name", persona.name); 
-        cJSON_AddNumberToObject(jsonItem, "age", persona.age); 
-        cJSON_AddStringToObject(jsonItem, "email", persona.email);
+        // li ho inseriti direttamente quando legge la risposta del client
+        //cJSON *jsonItem = cJSON_CreateObject();
+        //cJSON_AddStringToObject(jsonItem, "name", persona.name); 
+        //cJSON_AddNumberToObject(jsonItem, "age", persona.age); 
+        //cJSON_AddStringToObject(jsonItem, "email", persona.email);
 
         //creazione array di  oggetti json
-        cJSON *jsonArray = cJSON_CreateArray();
         cJSON_AddItemToArray(jsonArray,jsonItem);
 
         //creazione di una stringa in formato json con tutti gli oggetti
         char *json_str = cJSON_Print(jsonArray);
         
          // write the JSON string to a file 
-        FILE *fp = fopen("data.json", "w"); 
+        fp = fopen("data.json", "w"); 
         if (fp == NULL) { 
             printf("impossibile aprire il file dei dati\n"); 
             exit(42);
         }
-        printf("%s\n", json_str); 
         fputs(json_str, fp); 
+        printf("%s\n", cJSON_Print(jsonItem)); //stampa solo la persona appena inserita, non tutto l'array
+        
         fflush(fp);
         fclose;
         // free the JSON string and cJSON object 
@@ -210,7 +239,7 @@ int choiseHandler(int connectSocket, MSG choise)
         break;
     case 'x':
         break;
-    case 'm': // Per ora ho fatto solo il test per vedere se sei admin
+    case 'a': // Per ora ho fatto solo il test per vedere se sei admin
         // test sul flag se sei admin
         if (choise.isAdmin == 1){
             aggiungiPersona(connectSocket, buffer);
