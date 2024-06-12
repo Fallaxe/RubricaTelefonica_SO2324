@@ -16,6 +16,9 @@
 #include <string.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
 #include "../vendor/cjson/cJSON.h" //installabile via package manager
 #include "../vendor/cjson/cJSON_Utils.h"
 
@@ -50,7 +53,7 @@ char *scelteadmin= "a - aggiungi contatto\nm - modifica\n";
 char *sceltaUscita = "x - esci\nCosa vuoi fare?\t";
 char *visita = "inserisci il nome del contatto ricercato: ";
 
-
+int ppidServerInit=1; //dichiarata solo per identificare il padre
 void sendMenu(); //manda il menu' al client
 int choiseHandler(); //gestisce la richiesta restituendo l'intero corrispondete
 void printContent(); //manda i contatti presenti sul server

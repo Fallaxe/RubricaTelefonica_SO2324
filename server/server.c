@@ -262,8 +262,12 @@ int choiseHandler(int connectSocket, MSG choise)
 }
 
 void customSigHandler(){
-    printf("addio\n");
     close(serverSocket);
+    if(ppidServerInit == getpid()){
+        printf("\nProcesso padre(%d) terminato",ppidServerInit);
+        exit(0);
+    }
+    printf("\nprocesso figlio con pid %d terminato\n",getpid());
     exit(1);
 }
 
@@ -271,7 +275,7 @@ void customSigHandler(){
 void main(int argc, char const *argv[])
 {
     void (*handler) (int);
-
+    ppidServerInit = getpid();
     
     int connectSocket, returnCode;
     socklen_t clientAddressLen;
@@ -284,7 +288,11 @@ void main(int argc, char const *argv[])
     if((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("errore nella creazione del socket!");
         exit(serverSocket);
-    }   
+    }
+    
+    //modo per evitare l'errore "errore nel binding: Address already in use" (SO_REUSEADDR)
+    if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
+        perror("setsockopt(SO_REUSEADDR) failed");
 
     signal(SIGINT,customSigHandler);
 
@@ -317,9 +325,10 @@ void main(int argc, char const *argv[])
         }
         if(fork() == 0){
             clientIP = inet_ntoa(clientAddress.sin_addr);
-            printf("client connected! @ %s : %d\n",clientIP, connectSocket);
+            printf("client connected! @ %s : %d PID: %d PPID: %d\n",clientIP, connectSocket,getpid(),getppid());
 
             while(1) {
+
                 // attende richiesta dal client                
                 if((returnCode = recv(connectSocket, &buffer, sizeof(buffer), 0)) < 0) {
                     printf("Errore nella ricezione dei dati.\n");
