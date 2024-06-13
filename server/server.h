@@ -62,7 +62,7 @@ int verifica(t_credenziali cred);
 
 /*solo admin*/
 void addContact(); //aggiunge un nuovo contatto (aggiungo qui la richiesta di admin-mode?)
-void aggiungiPersona(int connectSocket, MSG buffer);
+int aggiungiPersona(int connectSocket, MSG buffer);
 
 
 void customSigHandler();

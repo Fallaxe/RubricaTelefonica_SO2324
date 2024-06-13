@@ -117,7 +117,9 @@ void login(int connectSocket, MSG buffer){
         sendMenu(connectSocket, buffer);
 }
 
-void aggiungiPersona(int connectSocket, MSG buffer){
+int aggiungiPersona(int connectSocket, MSG buffer){
+    //return 1 aggiunto correttamente
+    //return 0 problema all'aggiunta!
         //PROBLEMA: la modifica al "data.json" NON appare prima della chiusura del server.
         //SOLUZIONE: fflush() prima del fclose Quindi NON cancellarlo!
         //TODO: per il momento aggiunge e basta un oggetto al file, va fatto si che lo aggiunga
@@ -159,17 +161,27 @@ void aggiungiPersona(int connectSocket, MSG buffer){
             printf("Errore nella ricezione dei dati.\n");
         } else {
             //strcpy(persona.name, buffer.message);
+            if(strlen(buffer.message) > 12){
+                printf("l'utente ha superato i limiti imposti\n");
+                return 0;
+            }
             cJSON_AddStringToObject(jsonItem, "name", buffer.message);
             printf("Client - New contact: %s\n", buffer.message);
         }
 
+        strcpy(buffer.message, "");
         strcpy(buffer.message, "Inserire eta del contatto :\t");
         send(connectSocket,&buffer, sizeof(buffer),0);
 
         if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
             printf("Errore nella ricezione dei dati.\n");
         } else {
-            //persona.age = atoi(buffer.message);
+            
+            if(atoi(buffer.message) > 100 || atoi(buffer.message) < 1){
+                printf("l'utente ha superato i limiti imposti\n");
+                return 0;
+            }
+
             cJSON_AddNumberToObject(jsonItem, "age", atoi(buffer.message));
             printf("Client - New contact: %s\n", buffer.message);
         }
@@ -180,7 +192,11 @@ void aggiungiPersona(int connectSocket, MSG buffer){
         if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
             printf("Errore nella ricezione dei dati.\n");
         } else {
-            //strcpy(persona.email, buffer.message);
+            
+            if(strlen(buffer.message) > 25){
+                printf("l'utente ha superato i limiti imposti\n");
+                return 0;
+            }
             cJSON_AddStringToObject(jsonItem, "email", buffer.message);
             printf("Client - New contact: %s\n", buffer.message);
         }
@@ -212,6 +228,7 @@ void aggiungiPersona(int connectSocket, MSG buffer){
         cJSON_free(json_str);
         //cJSON_Delete(jsonArray);
         cJSON_Delete(jsonItem);
+        return 1;
 }
 
 int choiseHandler(int connectSocket, MSG choise)
@@ -235,12 +252,15 @@ int choiseHandler(int connectSocket, MSG choise)
         break;
     case 'a':
         if (choise.isAdmin == 1){
-            aggiungiPersona(connectSocket, buffer);
-            strcpy(buffer.message, ""); //pulisce buffer
+            int isAdded = aggiungiPersona(connectSocket, buffer);
+            strcpy(buffer.message, (isAdded ==1 ? 
+            "aggiunto contatto!\n" :
+            "errore nell'aggiunta:\nil nome deve essere minore di 12 \nl'età minore di 100 e maggiore di 0\ne la mail lunga al massimo 25 caratteri\n")); //pulisce buffer
         } else {
             strcpy(buffer.message, "Non hai l'autorizzazione a modificare.\n");
         }
         sendMenu(connectSocket, buffer);
+        strcpy(buffer.message, "");
         break;
     //    break;
     // case 5:
