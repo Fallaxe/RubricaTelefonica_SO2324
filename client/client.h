@@ -23,6 +23,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 
 #define SERVERPORT 12345
 #define SERVERADDRESS "127.0.0.1"
@@ -41,8 +42,11 @@ typedef struct credenziali
 } t_credenziali;
 
 t_credenziali cred;
+int clientSocket;
 char *home = "h";
 
 void login(int socket, MSG buffer);
 int parser(char *argomenti[], int max);
 void requestHome(int socket, MSG buffer);
+
+void customSigHandler();

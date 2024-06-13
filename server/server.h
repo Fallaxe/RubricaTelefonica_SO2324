@@ -51,7 +51,7 @@ char *benvenuto = "Benvenuto client\n";
 char *scelte = "v - visita \nl - login admin\n";
 char *scelteadmin= "a - aggiungi contatto\nm - modifica\n";
 char *sceltaUscita = "x - esci\nCosa vuoi fare?\t";
-char *visita = "inserisci il nome del contatto ricercato: ";
+char *visita = "lista di tutti i contatti: \n";
 
 int ppidServerInit=1; //dichiarata solo per identificare il padre
 void sendMenu(); //manda il menu' al client
@@ -59,8 +59,10 @@ int choiseHandler(); //gestisce la richiesta restituendo l'intero corrispondete
 void printContent(); //manda i contatti presenti sul server
 void login(int connectSocket, MSG buffer);
 int verifica(t_credenziali cred);
-void readContacts();
 
 /*solo admin*/
 void addContact(); //aggiunge un nuovo contatto (aggiungo qui la richiesta di admin-mode?)
 void aggiungiPersona(int connectSocket, MSG buffer);
+
+
+void customSigHandler();

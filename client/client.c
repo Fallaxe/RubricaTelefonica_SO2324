@@ -1,13 +1,14 @@
 #include "client.h"
 
 int main(int argc, char * argv[]) {
-    int clientSocket;
     struct sockaddr_in serverAddress;
     int returnCode;
   
     /* buffer bidirezionale per messaggi */
     MSG buffer;
     buffer.isAdmin = 0;
+
+    signal(SIGINT,customSigHandler);
 
     //printf("argc = %d\n", argc);
     
@@ -114,4 +115,10 @@ int parser(char *argomenti[],int max){
 void requestHome(int clientSocket, MSG buffer) {
     strcpy(buffer.message, home);
     send(clientSocket, &buffer, sizeof(buffer), 0);
+}
+
+void customSigHandler(){
+    printf("\ninterruzione ricevuta: chiusura socket.");
+    close(clientSocket);
+    exit(1);
 }

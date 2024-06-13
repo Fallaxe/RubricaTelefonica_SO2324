@@ -20,7 +20,41 @@ void sendMenu(int connectSocket, MSG buffer)
     send(connectSocket,&buffer, sizeof(buffer), 0);
 }
 
-int verifica(t_credenziali cred) {
+void printContent()
+{
+    cJSON *jsonArray;
+    char fileContent[1024];
+
+    // apre file data in lettura
+    FILE *fp = fopen("data.json", "r"); 
+    if (fp == NULL) {
+    // se il database non esiste
+        printf("non esiste il file\n");
+    } else {  
+        // legge il file su una stringa 
+        int len = fread(fileContent, 1, sizeof(fileContent), fp);
+        fclose(fp);
+  
+        // parse della string con JSON
+        jsonArray = cJSON_Parse(fileContent);
+
+        cJSON *element;
+
+        for (int i = 0; i < cJSON_GetArraySize(jsonArray); i++)
+        {   
+            //non invia ancora al client ma print solo al server
+            //problema: se mandiamo  l'intera lista il buffer dovrebbe andare in overflow sulla recezione/invio? (non riceve tutto credo)
+            element = cJSON_GetArrayItem(jsonArray,i);
+            printf("elemento: %s,%d,%s\n",cJSON_GetObjectItem(element,"name")->valuestring,cJSON_GetObjectItem(element,"age")->valueint,cJSON_GetObjectItem(element,"email")->valuestring);
+        }
+
+    }
+        //#######################################################
+    
+}
+
+int verifica(t_credenziali cred)
+{
     FILE * fptr;
     t_credenziali admin;
     int login = 0;
@@ -41,46 +75,6 @@ int verifica(t_credenziali cred) {
     if (login == 0) printf("Login non effettuato.\n");
     fclose(fptr);
     return login;
-}
-
-void readContacts()
-{
-// TODO: c'è solo un prototipo di come fare letto su internet
-//       in particolare va riletta tutta la cosa e fatto il parsing con le funzioni cJSON.
-//       probabilmente prima va letto che è un array di oggetti e poi gli item uno ad uno.
-//         // open the file 
-//     FILE *fp = fopen("data.json", "r"); 
-//     if (fp == NULL) { 
-//         printf("Error: Unable to open the file.\n"); 
-//         //return 1;
-//         exit(42); 
-//     } 
-  
-//     // read the file contents into a string 
-//     char buffer[1024]; 
-//     int len = fread(buffer, 1, sizeof(buffer), fp); 
-//     fclose(fp); 
-
-//     // parse the JSON data 
-//     cJSON *json = cJSON_Parse(buffer); 
-//     if (json == NULL) { 
-//         const char *error_ptr = cJSON_GetErrorPtr(); 
-//         if (error_ptr != NULL) { 
-//             printf("Error: %s\n", error_ptr); 
-//         } 
-//         cJSON_Delete(json); 
-//         return 1; 
-//     } 
-  
-//     // access the JSON data 
-//     cJSON *name = cJSON_GetObjectItemCaseSensitive(json, "name"); 
-//     if (cJSON_IsString(name) && (name->valuestring != NULL)) { 
-//         printf("Name: %s\n", name->valuestring); 
-//     } 
-  
-//     // delete the JSON object 
-//     cJSON_Delete(json); 
-//     return 0;
 }
 
 void login(int connectSocket, MSG buffer){
@@ -231,16 +225,15 @@ int choiseHandler(int connectSocket, MSG choise)
         strcpy(buffer.message, benvenuto);
         sendMenu(connectSocket, buffer);
         break;
-    //case 'v':
-    //    printf("%s",visita);
-    //    break;
+    case 'v':
+        printContent();
+        break;
     case 'l':
         login(connectSocket, buffer);
         break;
     case 'x':
         break;
-    case 'a': // Per ora ho fatto solo il test per vedere se sei admin
-        // test sul flag se sei admin
+    case 'a':
         if (choise.isAdmin == 1){
             aggiungiPersona(connectSocket, buffer);
             strcpy(buffer.message, ""); //pulisce buffer
