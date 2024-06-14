@@ -231,7 +231,7 @@ int aggiungiPersona(int connectSocket, MSG buffer){
         return 1;
 }
 
-int choiseHandler(int connectSocket, MSG choise)
+int choiseHandler(int connectSocket, MSG choise,sem_t *sem)
 {
     MSG buffer;
     buffer.isAdmin = choise.isAdmin;
@@ -251,16 +251,36 @@ int choiseHandler(int connectSocket, MSG choise)
     case 'x':
         break;
     case 'a':
+
         if (choise.isAdmin == 1){
+
+            //GESTIONE DI INFORMAZIONE CHE SEI IN CODA PER LA RICHIESTA (NON FUNZIONA E NON SO PERCHE)
+            // int valueSem;
+            // int returnCode;
+            // sem_getvalue(sem,&valueSem);
+            // printf("%d\n",valueSem);
+            // if(&valueSem == 0){//?
+            //     strcpy(buffer.message,"sei in coda per l'accesso alla richiesta\n!");
+            //     send(connectSocket,&buffer, sizeof(buffer), 0);
+
+            //     // if((returnCode=recv(connectSocket, &buffer, sizeof(buffer), 0)) < 0) {
+            //     //         printf("Errore nella ricezione dei dati.\n");
+            //     //     }
+            //     strcpy(buffer.message,"");
+            // }
+            sem_wait(sem); //lock semaphore
+            //"problema" se nell'attesa scrivo viene messo nel buffer del nome
             int isAdded = aggiungiPersona(connectSocket, buffer);
             strcpy(buffer.message, (isAdded ==1 ? 
             "aggiunto contatto!\n" :
             "errore nell'aggiunta:\nil nome deve essere minore di 12 \nl'età minore di 100 e maggiore di 0\ne la mail lunga al massimo 25 caratteri\n")); //pulisce buffer
+            sem_post(sem); // unlock semaphore
         } else {
             strcpy(buffer.message, "Non hai l'autorizzazione a modificare.\n");
         }
         sendMenu(connectSocket, buffer);
         strcpy(buffer.message, "");
+        
         break;
     //    break;
     // case 5:
@@ -290,6 +310,9 @@ void main(int argc, char const *argv[])
     void (*handler) (int);
     ppidServerInit = getpid();
     
+    sem_t *sem = mmap(NULL, sizeof(sem_t), PROT_READ |PROT_WRITE,MAP_SHARED|MAP_ANONYMOUS, -1, 0);
+    sem_init(sem,1,1);
+
     int connectSocket, returnCode;
     socklen_t clientAddressLen;
     struct sockaddr_in serverAddress, clientAddress;
@@ -349,7 +372,7 @@ void main(int argc, char const *argv[])
                     printf("Client - isAdmin: %d, Message %s\n", buffer.isAdmin, buffer.message);
                     
                     // gestione delle richieste                
-                    choiseHandler(connectSocket, buffer);
+                    choiseHandler(connectSocket, buffer,sem);
                 }
                 
                 if(strcmp(buffer.message, "x") == 0) {

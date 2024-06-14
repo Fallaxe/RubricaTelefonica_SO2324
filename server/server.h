@@ -18,6 +18,9 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <semaphore.h>
+#include <sys/mman.h>
 
 #include "../vendor/cjson/cJSON.h" //installabile via package manager
 #include "../vendor/cjson/cJSON_Utils.h"
@@ -55,7 +58,7 @@ char *visita = "lista di tutti i contatti: \n";
 
 int ppidServerInit=1; //dichiarata solo per identificare il padre
 void sendMenu(); //manda il menu' al client
-int choiseHandler(); //gestisce la richiesta restituendo l'intero corrispondete
+int choiseHandler(int connectSocket, MSG choise,sem_t *sem); //gestisce la richiesta restituendo l'intero corrispondete
 void printContent(); //manda i contatti presenti sul server
 void login(int connectSocket, MSG buffer);
 int verifica(t_credenziali cred);
