@@ -20,10 +20,14 @@ void sendMenu(int connectSocket, MSG buffer)
     send(connectSocket,&buffer, sizeof(buffer), 0);
 }
 
-void printContent()
+void printContent(int connectSocket, MSG buffer)
 {
     cJSON *jsonArray;
     char fileContent[1024];
+    char elementString[1024];
+    int nContacts = 0;
+    int contactsInPage = 3;
+    int nPage = 1;
 
     // apre file data in lettura
     FILE *fp = fopen("data.json", "r"); 
@@ -39,15 +43,53 @@ void printContent()
         jsonArray = cJSON_Parse(fileContent);
 
         cJSON *element;
+        nContacts = cJSON_GetArraySize(jsonArray);
+
+        strcpy(buffer.message, "---------- LEGGI LA RUBRICA ----------\n");
+        if (nContacts == 0) {
+            strcat(buffer.message, "Non ci sono contatti salvati.\n");
+            sendMenu(connectSocket, buffer);
+            return;
+        }
 
         for (int i = 0; i < cJSON_GetArraySize(jsonArray); i++)
         {   
             //non invia ancora al client ma print solo al server
             //problema: se mandiamo  l'intera lista il buffer dovrebbe andare in overflow sulla recezione/invio? (non riceve tutto credo)
+            //UPDATE: Per adesso invia 3 contatti per volta e chiede se si vuole cambiare pagina per continuare.
+            if (i%(contactsInPage) == 0) {
+                snprintf(elementString, sizeof(elementString), "Pagina %d di %d.\n", nPage, ((nContacts/3)+1)); 
+                strcat(buffer.message, elementString);
+            }
+     
             element = cJSON_GetArrayItem(jsonArray,i);
             printf("elemento: %s,%d,%s\n",cJSON_GetObjectItem(element,"name")->valuestring,cJSON_GetObjectItem(element,"age")->valueint,cJSON_GetObjectItem(element,"email")->valuestring);
-        }
 
+            snprintf(elementString, sizeof(elementString), "nome:  %s\netà:   %d\nemail: %s\n",cJSON_GetObjectItem(element,"name")->valuestring,cJSON_GetObjectItem(element,"age")->valueint,cJSON_GetObjectItem(element,"email")->valuestring); 
+            strcat(buffer.message, elementString);
+            strcat(buffer.message, "\n\n");
+
+            if ((i+1) < nContacts && (i+1)%contactsInPage == 0) {
+                strcat(buffer.message, "Vuoi vedere la pagina successiva? Y/N\n");
+                send(connectSocket,&buffer, sizeof(buffer),0);
+
+                if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+                    printf("Errore nella ricezione dei dati.\n");
+                } else {
+                    strcpy(cred.user, buffer.message);
+                    printf("Client - User: %s\n", buffer.message);
+                }
+
+                if (strcmp(buffer.message, "Y") == 0 || strcmp(buffer.message, "y") == 0) {
+                    strcpy(buffer.message, "");
+                    nPage ++;
+                } else {
+                    strcpy(buffer.message, "");
+                    break;
+                }
+            }
+        }
+        sendMenu(connectSocket, buffer);
     }
         //#######################################################
     
@@ -243,7 +285,7 @@ int choiseHandler(int connectSocket, MSG choise,sem_t *sem)
         sendMenu(connectSocket, buffer);
         break;
     case 'v':
-        printContent();
+        printContent(connectSocket, buffer);
         break;
     case 'l':
         login(connectSocket, buffer);
@@ -297,7 +339,7 @@ int choiseHandler(int connectSocket, MSG choise,sem_t *sem)
 void customSigHandler(){
     close(serverSocket);
     if(ppidServerInit == getpid()){
-        printf("\nProcesso padre(%d) terminato",ppidServerInit);
+        printf("\nProcesso padre(%d) terminato\n",ppidServerInit);
         exit(0);
     }
     printf("\nprocesso figlio con pid %d terminato\n",getpid());
@@ -379,7 +421,8 @@ void main(int argc, char const *argv[])
                     send(connectSocket, &buffer, sizeof(buffer), 0);
                     close(connectSocket);
                     printf("Client @ %s disconnesso.\n", clientIP);
-                    break;
+                    // chiude il processo figlio
+                    exit(1);
                 }
 
                 fflush(stdout);
