@@ -23,7 +23,6 @@ void sendMenu(int connectSocket, MSG buffer)
 static cJSON * loadDatabase()
 {
     cJSON *jsonArray;
-    char fileContent[1024];
 
     // apre file data in lettura
     FILE *fp = fopen("data.json", "r"); 
@@ -32,11 +31,17 @@ static cJSON * loadDatabase()
         printf("Errore in lettura database: database non trovato.\n");
         return NULL;
     } else {  
-        // legge il file su una stringa 
-        int len = fread(fileContent, 1, sizeof(fileContent), fp);
+        // calcolo dimensione del database
+        fseek(fp, 0, SEEK_END);
+        long size = ftell(fp);
+        fseek(fp, 0, SEEK_SET);
+
+        // memoria per database
+        char *fileContent = calloc((size + 1), sizeof(char));    
+        fread(fileContent, sizeof(char), size, fp);
         fclose(fp);
-  
-        // parse della string con JSON
+
+        // parse della stringa json
         jsonArray = cJSON_Parse(fileContent);
     }
     return jsonArray;
