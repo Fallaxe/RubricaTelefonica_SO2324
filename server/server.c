@@ -20,20 +20,17 @@ void sendMenu(int connectSocket, MSG buffer)
     send(connectSocket,&buffer, sizeof(buffer), 0);
 }
 
-void printContent(int connectSocket, MSG buffer)
+static cJSON * loadDatabase()
 {
     cJSON *jsonArray;
     char fileContent[1024];
-    char elementString[1024];
-    int nContacts = 0;
-    int contactsInPage = 3;
-    int nPage = 1;
 
     // apre file data in lettura
     FILE *fp = fopen("data.json", "r"); 
     if (fp == NULL) {
-    // se il database non esiste
-        printf("non esiste il file\n");
+        // se il database non esiste
+        printf("Errore in lettura database: database non trovato.\n");
+        return NULL;
     } else {  
         // legge il file su una stringa 
         int len = fread(fileContent, 1, sizeof(fileContent), fp);
@@ -41,16 +38,26 @@ void printContent(int connectSocket, MSG buffer)
   
         // parse della string con JSON
         jsonArray = cJSON_Parse(fileContent);
+    }
+    return jsonArray;
+}
 
+void printContent(int connectSocket, MSG buffer)
+{
+    cJSON *jsonArray = loadDatabase();
+    char elementString[1024];
+    int nContacts = 0;
+    int contactsInPage = 5;
+    int nPage = 1;
+
+    if (jsonArray == NULL || cJSON_GetArraySize(jsonArray) == 0)
+    {
+        strcpy(buffer.message, "Non ci sono contatti salvati.\n");
+    } else {   
         cJSON *element;
         nContacts = cJSON_GetArraySize(jsonArray);
 
         strcpy(buffer.message, "---------- LEGGI LA RUBRICA ----------\n");
-        if (nContacts == 0) {
-            strcat(buffer.message, "Non ci sono contatti salvati.\n");
-            sendMenu(connectSocket, buffer);
-            return;
-        }
 
         for (int i = 0; i < cJSON_GetArraySize(jsonArray); i++)
         {   
@@ -58,7 +65,7 @@ void printContent(int connectSocket, MSG buffer)
             //problema: se mandiamo  l'intera lista il buffer dovrebbe andare in overflow sulla recezione/invio? (non riceve tutto credo)
             //UPDATE: Per adesso invia 3 contatti per volta e chiede se si vuole cambiare pagina per continuare.
             if (i%(contactsInPage) == 0) {
-                snprintf(elementString, sizeof(elementString), "Pagina %d di %d.\n", nPage, ((nContacts/3)+1)); 
+                snprintf(elementString, sizeof(elementString), "%d contatti presenti in Rubrica. Pagina %d di %d.\n", nContacts, nPage, ((nContacts+(contactsInPage-1))/contactsInPage)); 
                 strcat(buffer.message, elementString);
             }
      
@@ -89,8 +96,8 @@ void printContent(int connectSocket, MSG buffer)
                 }
             }
         }
-        sendMenu(connectSocket, buffer);
     }
+    sendMenu(connectSocket, buffer);
         //#######################################################
     
 }
@@ -171,28 +178,12 @@ int aggiungiPersona(int connectSocket, MSG buffer){
 
         //t_person persona;  // <- se li mettiamo direttamente sul json non serve
         
-        // Legge Array con i Contatti ##############################
-        cJSON *jsonArray;
-        char fileContent[1024];
+        cJSON *jsonArray = loadDatabase();
 
-        // apre file data in lettura
-        FILE *fp = fopen("data.json", "r"); 
-        if (fp == NULL) {
-            // se il database non esiste
+        if (jsonArray == NULL) {
+            printf("Array vuoto\n");
             jsonArray = cJSON_CreateArray();
-        } else {  
-            // legge il file su una stringa 
-            int len = fread(fileContent, 1, sizeof(fileContent), fp);
-            fclose(fp);
-  
-            // parse della string con JSON
-            jsonArray = cJSON_Parse(fileContent); 
-            if (jsonArray == NULL) {
-                // se database esiste ma è vuoto (tipo se diamo la possibilità di eliminare contatti)
-                jsonArray = cJSON_CreateArray();
-            }
         }
-        //#######################################################
 
         cJSON *jsonItem = cJSON_CreateObject();
 
@@ -211,7 +202,6 @@ int aggiungiPersona(int connectSocket, MSG buffer){
             printf("Client - New contact: %s\n", buffer.message);
         }
 
-        strcpy(buffer.message, "");
         strcpy(buffer.message, "Inserire eta del contatto :\t");
         send(connectSocket,&buffer, sizeof(buffer),0);
 
@@ -235,7 +225,7 @@ int aggiungiPersona(int connectSocket, MSG buffer){
             printf("Errore nella ricezione dei dati.\n");
         } else {
             
-            if(strlen(buffer.message) > 25){
+            if(strlen(buffer.message) > 30){
                 printf("l'utente ha superato i limiti imposti\n");
                 return 0;
             }
@@ -256,7 +246,7 @@ int aggiungiPersona(int connectSocket, MSG buffer){
         char *json_str = cJSON_Print(jsonArray);
         
          // write the JSON string to a file 
-        fp = fopen("data.json", "w"); 
+        FILE * fp = fopen("data.json", "w"); 
         if (fp == NULL) { 
             printf("impossibile aprire il file dei dati\n"); 
             exit(42);
