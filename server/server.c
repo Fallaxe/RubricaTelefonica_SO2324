@@ -9,6 +9,11 @@
 
 int serverSocket;
 
+void clean_stdin() {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
+}
+
 void sendMenu(int connectSocket, MSG buffer)
 {
     strcat(buffer.message, scelte);
@@ -358,6 +363,10 @@ void main(int argc, char const *argv[])
     MSG buffer;
     buffer.isAdmin = 0;
 
+    while(createSettings() != 1){
+        printf("ricominciamo dal principio!\n");
+    }
+
     if((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("errore nella creazione del socket!");
         exit(serverSocket);
@@ -431,4 +440,64 @@ void main(int argc, char const *argv[])
     }
     
 
+}
+
+int createSettings(){
+
+    FILE *fp = fopen("password.txt", "r");
+    
+    t_credenziali admin;
+    // char name[25];
+    // char password[25];
+
+    if (fp == NULL) {
+        // se il database non esiste
+        printf("impostazioni non trovate.\nCreazione del file impostazioni.\n");
+
+        //problemi di gestione in caso di overflow
+        do{
+            printf("nome admin: ");
+            scanf("%24s",admin.user);
+        }while(strlen(admin.user)>24);
+        clean_stdin();
+
+        //per ora non fa lo sha --> openssl manca/libreria
+        do{   
+            printf("password (!)max 24 caratteri, sarà applicato uno sha(!):");
+            scanf("%24s",admin.password);
+        }while(strlen(admin.password) > 24);
+        clean_stdin();
+
+        printf("%s : %s conferma? [y/N]", admin.user, admin.password);
+
+        char scelta;
+        scanf("%c", &scelta); //spazio per evitare che venga preso un '\n'
+
+        printf("hai scelto: %c\n",scelta);
+        switch(scelta){
+
+            case 'Y':
+            
+            case 'y':
+                //fclose(fp) NON mi fa chiudere in lettura prima di riaprire in scrittura...(FUNZIONA UGUALE)
+                FILE *fpSettings = fopen("password.txt","w");
+                if (fpSettings == NULL) {
+                    printf("Errore nell'apertura del file.\n");
+                    return 1;
+                }
+                printf("impostazioni salvate con successo!\n\n");
+                fprintf(fpSettings,"%s %s",admin.user,admin.password);
+
+                fflush(fpSettings);
+                fclose(fpSettings);
+                return 1;
+
+            default:
+                fclose(fp);
+                printf("impostazioni non salvate.\n");
+                return 0;
+        }
+    }
+    fclose(fp);
+    return 1;
 }

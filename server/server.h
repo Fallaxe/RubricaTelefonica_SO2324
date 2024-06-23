@@ -69,3 +69,5 @@ int aggiungiPersona(int connectSocket, MSG buffer);
 
 
 void customSigHandler();
+int createSettings();
+void clean_stdin();
