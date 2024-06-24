@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <semaphore.h>
 #include <sys/mman.h>
+#include <ctype.h>
 
 #include "../vendor/cjson/cJSON.h" //installabile via package manager
 #include "../vendor/cjson/cJSON_Utils.h"
@@ -51,7 +52,7 @@ typedef struct credenziali
 
 t_credenziali cred;
 char *benvenuto = "Benvenuto client\n";
-char *scelte = "v - visita \nl - login admin\n";
+char *scelte = "v - visita\ns - ricerca\nl - login admin\n";
 char *scelteadmin= "a - aggiungi contatto\nm - modifica\n";
 char *sceltaUscita = "x - esci\nCosa vuoi fare?\t";
 char *visita = "lista di tutti i contatti: \n";
@@ -59,7 +60,8 @@ char *visita = "lista di tutti i contatti: \n";
 int ppidServerInit=1; //dichiarata solo per identificare il padre
 void sendMenu(); //manda il menu' al client
 int choiseHandler(int connectSocket, MSG choise,sem_t *sem); //gestisce la richiesta restituendo l'intero corrispondete
-void printContent(); //manda i contatti presenti sul server
+void readContent(int connectSocket, MSG buffer); //manda i contatti presenti sul server
+void search(int connectSocket, MSG buffer);
 void login(int connectSocket, MSG buffer);
 int verifica(t_credenziali cred);
 
