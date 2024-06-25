@@ -51,35 +51,35 @@ typedef struct credenziali
 } t_credenziali;
 
 char *contactBase =
-"{ \
-    \"name\": {\
-        \"question\": \"Inserire il nome del contatto: \n\", \
-        \"type\": \"string\", \
-        \"dimension\": 12, \
-    }, \
-    \"surname\": {\
-        \"question\": \"Inserire il cognome del contatto: \n\", \
-        \"type\": \"string\", \
-        \"dimension\": 12, \
-    }, \
-    \"age\": {\
-        \"question\": \"Inserire l'età del contatto: \n\", \
-        \"type\": \"int\", \
-        \"max\": 99, \
-        \"min\": 1, \
-    }, \
-    \"phone\": {\
-        \"question\": \"Inserire il numero di telefono del contatto: \n\", \
-        \"type\": \"string\", \
-        \"dimension\": 16, \
-        \"useOnly\": \"+ 0123456789\", \
-    }, \
-    \"email\": {\
-        \"question\": \"Inserire l'email del contatto: \n\", \
-        \"type\": \"string\", \
-        \"dimension\": 30, \
-    }, \
-}";
+"{\
+    \n\"name\": \n{\
+        \n\"question\": \"Inserire il nome del contatto: \n\", \
+        \n\"type\": \"string\", \
+        \n\"dimension\": 12 \
+    \n}, \
+    \n\"surname\": \n{\
+        \n\"question\": \"Inserire il cognome del contatto: \n\", \
+        \n\"type\": \"string\", \
+        \n\"dimension\": 12 \
+    \n}, \
+    \n\"age\": \n{\
+        \n\"question\": \"Inserire l'età del contatto: \n\", \
+        \n\"type\": \"int\", \
+        \n\"max\": 99, \
+        \n\"min\": 1\
+    \n}, \
+    \n\"email\": \n{\
+        \n\"question\": \"Inserire l'email del contatto: \n\", \
+        \n\"type\": \"string\", \
+        \n\"dimension\": 30 \
+    \n}, \
+    \n\"phone\": \n{\
+        \n\"question\": \"Inserire il numero di telefono del contatto: \n\", \
+        \n\"type\": \"string\", \
+        \n\"dimension\": 16, \
+        \n\"useOnly\": \"+ 0123456789\" \
+    \n} \
+\n}";
 
 t_credenziali cred;
 char *benvenuto = "Benvenuto client\n";

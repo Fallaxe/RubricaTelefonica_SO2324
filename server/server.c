@@ -131,7 +131,7 @@ void search(int connectSocket, MSG buffer)
 {   
     cJSON *jsonArray = loadDatabase();
     cJSON *foundArr = cJSON_CreateArray();
-    char name[12];
+    char searchName[25];
     
     if (jsonArray == NULL || cJSON_GetArraySize(jsonArray) == 0)
     {
@@ -139,20 +139,25 @@ void search(int connectSocket, MSG buffer)
         sendMenu(connectSocket, buffer);
     } else
     {
-        strcpy(buffer.message, "Inserisci un nome da ricercare:\n");
+        strcpy(buffer.message, "Inserire nome della persona da cercare:\n");
         send(connectSocket,&buffer, sizeof(buffer),0);
 
         if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
             printf("Errore nella ricezione dei dati.\n");
         } else {
-            strcpy(name, buffer.message);
+            strcpy(searchName, buffer.message);
             printf("Client - Ricerca: %s\n", buffer.message);
         }
 
         cJSON *element = jsonArray->child;
+        char nameSurname[25];
+        char surnameName[25];
         while (element)
         {
-            if(strstr(lowercase(cJSON_GetObjectItem(element,"name")->valuestring), lowercase(name)))
+            snprintf(nameSurname, sizeof(nameSurname), "%s %s", cJSON_GetObjectItem(element,"name")->valuestring, cJSON_GetObjectItem(element,"surname")->valuestring);
+            snprintf(surnameName, sizeof(surnameName), "%s %s", cJSON_GetObjectItem(element,"surname")->valuestring, cJSON_GetObjectItem(element,"name")->valuestring);
+
+            if(strstr(lowercase(nameSurname), lowercase(searchName)) || strstr(lowercase(surnameName), lowercase(searchName)))
                 cJSON_AddItemToArray(foundArr, cJSON_Duplicate(element, 1));
 
             element = element->next;
