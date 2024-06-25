@@ -81,7 +81,8 @@ void printContent(int connectSocket, MSG buffer, cJSON * array)
             }
      
             // Stringa Contatto
-            snprintf(elementString, sizeof(elementString), "nome:  %s\netà:   %d\nemail: %s\n\n",cJSON_GetObjectItem(element,"name")->valuestring,cJSON_GetObjectItem(element,"age")->valueint,cJSON_GetObjectItem(element,"email")->valuestring); 
+            snprintf(elementString, sizeof(elementString), "nome: %s\ncognome: %s\netà: %d\nemail: %s\ntelefono: %s\n\n",cJSON_GetObjectItem(element,"name")->valuestring,cJSON_GetObjectItem(element,"surname")->valuestring,cJSON_GetObjectItem(element,"age")->valueint,cJSON_GetObjectItem(element,"email")->valuestring,cJSON_GetObjectItem(element,"phone")->valuestring); 
+            printf("dimensioni elemento: %ld\n", strlen(elementString));
             strcat(buffer.message, elementString);
 
             // Fine pagina
@@ -271,6 +272,20 @@ int aggiungiPersona(int connectSocket, MSG buffer){
             printf("Client - New contact: %s\n", buffer.message);
         }
 
+        strcpy(buffer.message, "Inserire cognome del contatto :\t");
+        send(connectSocket,&buffer, sizeof(buffer),0);
+
+        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+            printf("Errore nella ricezione dei dati.\n");
+        } else {
+            if(strlen(buffer.message) > 12){
+                printf("l'utente ha superato i limiti imposti\n");
+                return 0;
+            }
+            cJSON_AddStringToObject(jsonItem, "surname", buffer.message);
+            printf("Client - New contact: %s\n", buffer.message);
+        }
+
         strcpy(buffer.message, "Inserire eta del contatto :\t");
         send(connectSocket,&buffer, sizeof(buffer),0);
 
@@ -299,6 +314,20 @@ int aggiungiPersona(int connectSocket, MSG buffer){
                 return 0;
             }
             cJSON_AddStringToObject(jsonItem, "email", buffer.message);
+            printf("Client - New contact: %s\n", buffer.message);
+        }
+
+        strcpy(buffer.message, "Inserire telefono del contatto :\t");
+        send(connectSocket,&buffer, sizeof(buffer),0);
+
+        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+            printf("Errore nella ricezione dei dati.\n");
+        } else {
+            if(strlen(buffer.message) > 16){
+                printf("l'utente ha superato i limiti imposti\n");
+                return 0;
+            }
+            cJSON_AddStringToObject(jsonItem, "phone", buffer.message);
             printf("Client - New contact: %s\n", buffer.message);
         }
 

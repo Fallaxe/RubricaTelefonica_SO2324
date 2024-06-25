@@ -38,17 +38,48 @@ typedef struct MSG {
     char message[BUFFER_MAX];
 } MSG;
 
-typedef struct person{
-    char name[25];
-    int age;
-    char email[25];
-}t_person;
+// typedef struct person{
+//     char name[25];
+//     int age;
+//     char email[25];
+// }t_person;
 
 typedef struct credenziali
 {
     char user[25];
     char password[25];
 } t_credenziali;
+
+char *contactBase =
+"{ \
+    \"name\": {\
+        \"question\": \"Inserire il nome del contatto: \n\", \
+        \"type\": \"string\", \
+        \"dimension\": 12, \
+    }, \
+    \"surname\": {\
+        \"question\": \"Inserire il cognome del contatto: \n\", \
+        \"type\": \"string\", \
+        \"dimension\": 12, \
+    }, \
+    \"age\": {\
+        \"question\": \"Inserire l'età del contatto: \n\", \
+        \"type\": \"int\", \
+        \"max\": 99, \
+        \"min\": 1, \
+    }, \
+    \"phone\": {\
+        \"question\": \"Inserire il numero di telefono del contatto: \n\", \
+        \"type\": \"string\", \
+        \"dimension\": 16, \
+        \"useOnly\": \"+ 0123456789\", \
+    }, \
+    \"email\": {\
+        \"question\": \"Inserire l'email del contatto: \n\", \
+        \"type\": \"string\", \
+        \"dimension\": 30, \
+    }, \
+}";
 
 t_credenziali cred;
 char *benvenuto = "Benvenuto client\n";
