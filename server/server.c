@@ -129,6 +129,8 @@ static cJSON * loadDatabase()
 
         // parse della stringa json
         jsonArray = cJSON_Parse(fileContent);
+
+        free(fileContent);
     }
     return jsonArray;
 }
