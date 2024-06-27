@@ -26,22 +26,25 @@ int utils_strIncludeOnly(char * str, char * digits)
 }
 
 ////////////////////////////////////////// dalla libreria cJSONUtils /////////////////////////////////////////////////
-static int compare_strings(const unsigned char *string1, const unsigned char *string2)
+static int compare_strings(char *string1, char *string2)
 {
     if ((string1 == NULL) || (string2 == NULL))
     {
         return 1;
     }
 
+    string1 = utils_lowercase(string1);
+    string1 = utils_lowercase(string1);
+
     if (string1 == string2)
     {
         return 0;
     }
 
-    return strcmp((const char*)string1, (const char*)string2);
+    return strcmp(string1, string2);
 }
 
-CJSON_PUBLIC(cJSON *) utils_sortByKey(cJSON *list, const char * const key)
+static cJSON *sort_bykey(cJSON *list, const char * const key)
 {
     cJSON *first = list;
     cJSON *second = list;
@@ -55,7 +58,7 @@ CJSON_PUBLIC(cJSON *) utils_sortByKey(cJSON *list, const char * const key)
         return result;
     }
 
-    while ((current_item != NULL) && (current_item->next != NULL) && (compare_strings(utils_lowercase(cJSON_GetObjectItem(current_item,key)->valuestring), utils_lowercase(cJSON_GetObjectItem((current_item->next),key)->valuestring)) < 0))
+    while ((current_item != NULL) && (current_item->next != NULL) && (compare_strings(cJSON_GetObjectItem(current_item,key)->valuestring, cJSON_GetObjectItem((current_item->next),key)->valuestring) < 0))
     {
         /* Test for list sorted. */
         current_item = current_item->next;
@@ -87,15 +90,15 @@ CJSON_PUBLIC(cJSON *) utils_sortByKey(cJSON *list, const char * const key)
     }
 
     /* Recursively sort the sub-lists. */
-    first = utils_sortByKey(first, key);
-    second = utils_sortByKey(second, key);
+    first =sort_bykey(first, key);
+    second = sort_bykey(second, key);
     result = NULL;
 
     /* Merge the sub-lists */
     while ((first != NULL) && (second != NULL))
     {
         cJSON *smaller = NULL;
-        if (compare_strings(utils_lowercase(cJSON_GetObjectItem(current_item,key)->valuestring), utils_lowercase(cJSON_GetObjectItem((current_item->next),key)->valuestring)) < 0)
+        if (compare_strings(cJSON_GetObjectItem(first,key)->valuestring, cJSON_GetObjectItem(second,key)->valuestring) < 0)
         {
             smaller = first;
         }
@@ -150,4 +153,14 @@ CJSON_PUBLIC(cJSON *) utils_sortByKey(cJSON *list, const char * const key)
     }
 
     return result;
+}
+
+CJSON_PUBLIC(void) utils_sortByKey(cJSON * object, char * key)
+{
+    if (object == NULL || key == NULL || cJSON_IsArray(object) == 0 || cJSON_GetArraySize(object) < 2)
+    {
+        return;
+    }
+
+    object->child = sort_bykey(object->child, key);
 }

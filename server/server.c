@@ -222,7 +222,7 @@ cJSON *creaPersona(int connectSocket)
         if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
             printf("Errore nella ricezione dei dati.\n");
         } else {
-            if(strlen(buffer.message) > 16){
+            if(strlen(buffer.message) > 16 || utils_strIncludeOnly(buffer.message, "+ 1234567890") == 0){
                 printf("l'utente ha superato i limiti imposti\n");
                 return NULL;
             }
