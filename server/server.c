@@ -13,6 +13,59 @@ void clean_stdin() {
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
 }
+void removeFromList(cJSON* list,int connectSocket)
+{
+    MSG buffer;
+    strcpy(buffer.message,"mandami l'indice del contatto da eliminare");
+    send(connectSocket,buffer.message,strlen(buffer.message),0);
+
+    //controllo atoi
+    int num = atoi(buffer.message);
+    int nContacts = cJSON_GetArraySize(list);
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0 || num < 0 || num > nContacts)
+        printf("Errore nella ricezione dei dati.\n");
+    else {
+        strcpy(cred.user, buffer.message);
+        printf("Client - User: eliminaizione di %s\n", buffer.message);
+    }
+    //cancella dall'array all'indirizzo selezionato
+    cJSON_DeleteItemFromArray(list,num);
+    saveDatabase(list);
+}
+
+void editFromList(cJSON *list, int connectSocket)
+{
+    MSG buffer;
+    strcpy(buffer.message,"mandami l'indice del contatto da modificare");
+    send(connectSocket,buffer.message,strlen(buffer.message),0);
+
+    //controllo atoi
+    int num = atoi(buffer.message);
+    int nContacts = cJSON_GetArraySize(list);
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0 || num < 0 || num > nContacts)
+        printf("Errore nella ricezione dei dati.\n");
+    else {
+        strcpy(cred.user, buffer.message);
+        printf("Client - User: modifica di %s\n", buffer.message);
+    }
+
+    cJSON* element = cJSON_GetArrayItem(list,num);
+    sprintf(buffer.message,"contatto: \n%s\n%s\n%d\n%s\n%s\nmodifichiamolo?[y/N]\n",cJSON_GetObjectItem(element,"name")->valuestring,cJSON_GetObjectItem(element,"surname")->valuestring,cJSON_GetObjectItem(element,"age")->valueint,cJSON_GetObjectItem(element,"email")->valuestring,cJSON_GetObjectItem(element,"phone")->valuestring);
+    send(connectSocket,buffer.message,strlen(buffer.message),0);
+
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)))
+        printf("Errore nella ricezione dei dati.\n");
+    else {
+        strcpy(cred.user, buffer.message);
+        printf("Client - User: modifica di %s\n", buffer.message);
+    }
+
+    if(strcmp(buffer.message,"y")){
+        //edit
+        cJSON* nuovaPersona = creaPersona(connectSocket);
+        cJSON_ReplaceItemInArray(list,num,nuovaPersona);
+    }
+}
 
 void sendMenu(int connectSocket, MSG buffer)
 {
@@ -52,13 +105,111 @@ static cJSON * loadDatabase()
     return jsonArray;
 }
 
-void printContent(int connectSocket, MSG buffer, cJSON * array)
+void saveDatabase(cJSON * jsonArray){
+    //creazione di una stringa in formato json con tutti gli oggetti
+        char *json_str = cJSON_Print(jsonArray);
+     // write the JSON string to a file 
+        FILE * fp = fopen("data.json", "w"); 
+        if (fp == NULL) { 
+            printf("impossibile aprire il file dei dati\n"); 
+            exit(42);
+        }
+        fputs(json_str, fp);
+
+        fflush(fp);
+        fclose;
+        // free the JSON string and cJSON object 
+        cJSON_free(json_str);
+}
+
+cJSON *creaPersona(int connectSocket)
+{
+    MSG buffer;
+    cJSON *jsonItem = cJSON_CreateObject();
+
+    strcpy(buffer.message, "Nuovo Contatto\nInserire nome del contatto :\t");
+        send(connectSocket,&buffer, sizeof(buffer),0);
+
+        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+            printf("Errore nella ricezione dei dati.\n");
+        } else {
+            //strcpy(persona.name, buffer.message);
+            if(strlen(buffer.message) > 12){
+                printf("l'utente ha superato i limiti imposti\n");
+                return 0;
+            }
+            cJSON_AddStringToObject(jsonItem, "name", buffer.message);
+            printf("Client - New contact: %s\n", buffer.message);
+        }
+
+    strcpy(buffer.message, "Inserire cognome del contatto :\t");
+        send(connectSocket,&buffer, sizeof(buffer),0);
+
+        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+            printf("Errore nella ricezione dei dati.\n");
+        } else {
+            if(strlen(buffer.message) > 12){
+                printf("l'utente ha superato i limiti imposti\n");
+                return NULL;
+            }
+            cJSON_AddStringToObject(jsonItem, "surname", buffer.message);
+            printf("Client - New contact: %s\n", buffer.message);
+        }
+
+        strcpy(buffer.message, "Inserire eta del contatto :\t");
+        send(connectSocket,&buffer, sizeof(buffer),0);
+
+        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+            printf("Errore nella ricezione dei dati.\n");
+        } else {
+            
+            if(atoi(buffer.message) > 100 || atoi(buffer.message) < 1){
+                printf("l'utente ha superato i limiti imposti\n");
+                return NULL;
+            }
+
+            cJSON_AddNumberToObject(jsonItem, "age", atoi(buffer.message));
+            printf("Client - New contact: %s\n", buffer.message);
+        }
+
+        strcpy(buffer.message, "Inserire email del contatto :\t");
+        send(connectSocket,&buffer, sizeof(buffer),0);
+
+        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+            printf("Errore nella ricezione dei dati.\n");
+        } else {
+            
+            if(strlen(buffer.message) > 30){
+                printf("l'utente ha superato i limiti imposti\n");
+                return NULL;
+            }
+            cJSON_AddStringToObject(jsonItem, "email", buffer.message);
+            printf("Client - New contact: %s\n", buffer.message);
+        }
+
+        strcpy(buffer.message, "Inserire telefono del contatto :\t");
+        send(connectSocket,&buffer, sizeof(buffer),0);
+
+        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+            printf("Errore nella ricezione dei dati.\n");
+        } else {
+            if(strlen(buffer.message) > 16){
+                printf("l'utente ha superato i limiti imposti\n");
+                return NULL;
+            }
+            cJSON_AddStringToObject(jsonItem, "phone", buffer.message);
+            printf("Client - New contact: %s\n", buffer.message);
+        }
+    return jsonItem;
+}
+
+void printContent(cJSON * array, int connectSocket,MSG buffer)
 {
     char elementString[1024];
     int nContacts = 0;
     int contactsInPage = 5;
     int nPage = 1;
-
+    
     if (array == NULL || cJSON_GetArraySize(array) == 0)
         strcat(buffer.message, "Non ci sono contatti salvati.\n");
     else
@@ -81,7 +232,7 @@ void printContent(int connectSocket, MSG buffer, cJSON * array)
             }
      
             // Stringa Contatto
-            snprintf(elementString, sizeof(elementString), "nome: %s\ncognome: %s\netà: %d\nemail: %s\ntelefono: %s\n\n",cJSON_GetObjectItem(element,"name")->valuestring,cJSON_GetObjectItem(element,"surname")->valuestring,cJSON_GetObjectItem(element,"age")->valueint,cJSON_GetObjectItem(element,"email")->valuestring,cJSON_GetObjectItem(element,"phone")->valuestring); 
+            snprintf(elementString, sizeof(elementString), "%d) nome: %s\ncognome: %s\netà: %d\nemail: %s\ntelefono: %s\n\n",i,cJSON_GetObjectItem(element,"name")->valuestring,cJSON_GetObjectItem(element,"surname")->valuestring,cJSON_GetObjectItem(element,"age")->valueint,cJSON_GetObjectItem(element,"email")->valuestring,cJSON_GetObjectItem(element,"phone")->valuestring); 
             printf("dimensioni elemento: %ld\n", strlen(elementString));
             strcat(buffer.message, elementString);
 
@@ -100,7 +251,6 @@ void printContent(int connectSocket, MSG buffer, cJSON * array)
 
                 if (strcmp(buffer.message, "Y") == 0 || strcmp(buffer.message, "y") == 0) {
                     strcpy(buffer.message, "");
-                    nPage ++;
                 } else {
                     strcpy(buffer.message, "");
                     break;
@@ -118,7 +268,7 @@ void readContent(int connectSocket, MSG buffer)
 {
     cJSON *jsonArray = loadDatabase();
     strcpy(buffer.message, "---------- LEGGI LA RUBRICA ----------\n");
-    printContent(connectSocket, buffer, jsonArray);
+    printContent(jsonArray,connectSocket,buffer);
 }
 
 static char * lowercase(char * stringa)
@@ -127,7 +277,7 @@ static char * lowercase(char * stringa)
     return stringa;
 }
 
-void search(int connectSocket, MSG buffer)
+void search(int connectSocket, MSG buffer, operationOnList op)
 {   
     cJSON *jsonArray = loadDatabase();
     cJSON *foundArr = cJSON_CreateArray();
@@ -168,7 +318,9 @@ void search(int connectSocket, MSG buffer)
         if(cJSON_GetArraySize(foundArr) > 0)
         {
             strcpy(buffer.message, "");
-            printContent(connectSocket, buffer, foundArr);    
+            printContent(foundArr,connectSocket,buffer); //diventata una op?
+            if(op != NULL)
+                op(foundArr,connectSocket);
         } else
         {
             strcpy(buffer.message, "Nessun contatto trovato.\n");
@@ -260,110 +412,17 @@ int aggiungiPersona(int connectSocket, MSG buffer){
             jsonArray = cJSON_CreateArray();
         }
 
-        cJSON *jsonItem = cJSON_CreateObject();
-
-        strcpy(buffer.message, "Nuovo Contatto\nInserire nome del contatto :\t");
-        send(connectSocket,&buffer, sizeof(buffer),0);
-
-        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
-            printf("Errore nella ricezione dei dati.\n");
-        } else {
-            //strcpy(persona.name, buffer.message);
-            if(strlen(buffer.message) > 12){
-                printf("l'utente ha superato i limiti imposti\n");
-                return 0;
-            }
-            cJSON_AddStringToObject(jsonItem, "name", buffer.message);
-            printf("Client - New contact: %s\n", buffer.message);
+        cJSON* jsonItem = creaPersona(connectSocket);
+        if(jsonItem != NULL)
+        {
+            cJSON_AddItemToArray(jsonArray,jsonItem);
+            printf("%s\n", cJSON_Print(jsonItem)); //stampa solo la persona appena inserita, non tutto l'array
+            saveDatabase(jsonArray);
+            cJSON_Delete(jsonItem);
+            return 1;
         }
-
-        strcpy(buffer.message, "Inserire cognome del contatto :\t");
-        send(connectSocket,&buffer, sizeof(buffer),0);
-
-        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
-            printf("Errore nella ricezione dei dati.\n");
-        } else {
-            if(strlen(buffer.message) > 12){
-                printf("l'utente ha superato i limiti imposti\n");
-                return 0;
-            }
-            cJSON_AddStringToObject(jsonItem, "surname", buffer.message);
-            printf("Client - New contact: %s\n", buffer.message);
-        }
-
-        strcpy(buffer.message, "Inserire eta del contatto :\t");
-        send(connectSocket,&buffer, sizeof(buffer),0);
-
-        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
-            printf("Errore nella ricezione dei dati.\n");
-        } else {
-            
-            if(atoi(buffer.message) > 100 || atoi(buffer.message) < 1){
-                printf("l'utente ha superato i limiti imposti\n");
-                return 0;
-            }
-
-            cJSON_AddNumberToObject(jsonItem, "age", atoi(buffer.message));
-            printf("Client - New contact: %s\n", buffer.message);
-        }
-
-        strcpy(buffer.message, "Inserire email del contatto :\t");
-        send(connectSocket,&buffer, sizeof(buffer),0);
-
-        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
-            printf("Errore nella ricezione dei dati.\n");
-        } else {
-            
-            if(strlen(buffer.message) > 30){
-                printf("l'utente ha superato i limiti imposti\n");
-                return 0;
-            }
-            cJSON_AddStringToObject(jsonItem, "email", buffer.message);
-            printf("Client - New contact: %s\n", buffer.message);
-        }
-
-        strcpy(buffer.message, "Inserire telefono del contatto :\t");
-        send(connectSocket,&buffer, sizeof(buffer),0);
-
-        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
-            printf("Errore nella ricezione dei dati.\n");
-        } else {
-            if(strlen(buffer.message) > 16){
-                printf("l'utente ha superato i limiti imposti\n");
-                return 0;
-            }
-            cJSON_AddStringToObject(jsonItem, "phone", buffer.message);
-            printf("Client - New contact: %s\n", buffer.message);
-        }
-
-        // li ho inseriti direttamente quando legge la risposta del client
-        //cJSON *jsonItem = cJSON_CreateObject();
-        //cJSON_AddStringToObject(jsonItem, "name", persona.name); 
-        //cJSON_AddNumberToObject(jsonItem, "age", persona.age); 
-        //cJSON_AddStringToObject(jsonItem, "email", persona.email);
-
-        //creazione array di  oggetti json
-        cJSON_AddItemToArray(jsonArray,jsonItem);
-
-        //creazione di una stringa in formato json con tutti gli oggetti
-        char *json_str = cJSON_Print(jsonArray);
-        
-         // write the JSON string to a file 
-        FILE * fp = fopen("data.json", "w"); 
-        if (fp == NULL) { 
-            printf("impossibile aprire il file dei dati\n"); 
-            exit(42);
-        }
-        fputs(json_str, fp); 
-        printf("%s\n", cJSON_Print(jsonItem)); //stampa solo la persona appena inserita, non tutto l'array
-        
-        fflush(fp);
-        fclose;
-        // free the JSON string and cJSON object 
-        cJSON_free(json_str);
-        //cJSON_Delete(jsonArray);
         cJSON_Delete(jsonItem);
-        return 1;
+        return 0;
 }
 
 int choiseHandler(int connectSocket, MSG choise,sem_t *sem)
@@ -381,10 +440,24 @@ int choiseHandler(int connectSocket, MSG choise,sem_t *sem)
         readContent(connectSocket, buffer);
         break;
     case 's':
-        search(connectSocket, buffer);
+        search(connectSocket, buffer,NULL);
         break;
     case 'l':
         login(connectSocket, buffer);
+        break;
+    case 'm':
+        if (choise.isAdmin == 1){
+            sem_wait(sem);
+            search(connectSocket,buffer,editFromList);
+            sem_post(sem);
+        }
+        break;
+    case 'r':
+        if (choise.isAdmin == 1){
+            sem_wait(sem);
+            search(connectSocket,buffer,removeFromList);
+            sem_post(sem);
+        }
         break;
     case 'x':
         break;
@@ -597,3 +670,57 @@ int createSettings(){
     fclose(fp);
     return 1;
 }
+
+/*
+cJSON* searchAndReturn(int connectSocket, MSG buffer)
+{
+    cJSON *jsonArray = loadDatabase();
+    cJSON *foundArr = cJSON_CreateArray();
+    char searchName[25];
+    
+    if (jsonArray == NULL || cJSON_GetArraySize(jsonArray) == 0)
+    {
+        strcpy(buffer.message, "Non ci sono contatti salvati.\n");
+        sendMenu(connectSocket, buffer);
+    } else
+    {
+        strcpy(buffer.message, "Inserire nome della persona da cercare:\n");
+        send(connectSocket,&buffer, sizeof(buffer),0);
+
+        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+            printf("Errore nella ricezione dei dati.\n");
+        } else {
+            strcpy(searchName, buffer.message);
+            printf("Client - Ricerca: %s\n", buffer.message);
+        }
+
+        cJSON *element = jsonArray->child;
+        char nameSurname[25];
+        char surnameName[25];
+        while (element)
+        {
+            snprintf(nameSurname, sizeof(nameSurname), "%s %s", cJSON_GetObjectItem(element,"name")->valuestring, cJSON_GetObjectItem(element,"surname")->valuestring);
+            snprintf(surnameName, sizeof(surnameName), "%s %s", cJSON_GetObjectItem(element,"surname")->valuestring, cJSON_GetObjectItem(element,"name")->valuestring);
+
+            if(strstr(lowercase(nameSurname), lowercase(searchName)) || strstr(lowercase(surnameName), lowercase(searchName)))
+                cJSON_AddItemToArray(foundArr, cJSON_Duplicate(element, 1));
+
+            element = element->next;
+        }
+
+        cJSON_Delete(element);
+      
+        if(cJSON_GetArraySize(foundArr) > 0)
+        {
+            strcpy(buffer.message, "");
+            printContent(connectSocket, buffer, foundArr);
+            return foundArr; 
+        } else
+        {
+            strcpy(buffer.message, "Nessun contatto trovato.\n");
+            sendMenu(connectSocket, buffer);
+            return NULL;
+        }
+    }
+}
+*/
