@@ -23,6 +23,7 @@
 #include <sys/mman.h>
 #include <ctype.h>
 
+#include "server_utils.h"
 #include "../vendor/cjson/cJSON.h" //installabile via package manager
 #include "../vendor/cjson/cJSON_Utils.h"
 
@@ -38,7 +39,7 @@ typedef struct MSG {
     char message[BUFFER_MAX];
 } MSG;
 
-typedef void (*operationOnList)(cJSON* list, int connectSocket);
+typedef void (*operationOnList)(cJSON *found, cJSON* list, int connectSocket, MSG buffer);
 // typedef struct person{
 //     char name[25];
 //     int age;
@@ -93,7 +94,7 @@ int ppidServerInit=1; //dichiarata solo per identificare il padre
 void sendMenu(); //manda il menu' al client
 int choiseHandler(int connectSocket, MSG choise,sem_t *sem); //gestisce la richiesta restituendo l'intero corrispondete
 void readContent(int connectSocket, MSG buffer); //manda i contatti presenti sul server
-void search(int connectSocket, MSG buffer,operationOnList op);
+MSG  search(int connectSocket, MSG buffer,operationOnList op);
 //cJSON* searchAndReturn(int connectSocket, MSG buffer);
 void login(int connectSocket, MSG buffer);
 int verifica(t_credenziali cred);
@@ -105,9 +106,9 @@ int aggiungiPersona(int connectSocket, MSG buffer);
 void customSigHandler();
 int createSettings();
 void clean_stdin();
-void removeFromList(cJSON* list,int connectSocket);
-void editFromList(cJSON* list,int connectSocket);
-void printContent(cJSON * array, int connectSocket,MSG buffer);
+void removeFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
+void editFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
+MSG  printContent(cJSON * array, int connectSocket,MSG buffer);
 static cJSON * loadDatabase();
 void saveDatabase(cJSON * list);
 cJSON* creaPersona(int connectSocket);

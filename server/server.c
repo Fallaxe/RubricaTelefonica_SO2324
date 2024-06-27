@@ -13,57 +13,85 @@ void clean_stdin() {
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
 }
-void removeFromList(cJSON* list,int connectSocket)
-{
-    MSG buffer;
-    strcpy(buffer.message,"mandami l'indice del contatto da eliminare");
-    send(connectSocket,buffer.message,strlen(buffer.message),0);
 
-    //controllo atoi
-    int num = atoi(buffer.message);
-    int nContacts = cJSON_GetArraySize(list);
-    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0 || num < 0 || num > nContacts)
+void removeFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer)
+{
+    strcat(buffer.message,"mandami l'indice del contatto da eliminare");
+    send(connectSocket,&buffer, sizeof(buffer), 0);
+
+    int num = -1;
+    int nContacts = cJSON_GetArraySize(found);
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0)
         printf("Errore nella ricezione dei dati.\n");
     else {
-        strcpy(cred.user, buffer.message);
-        printf("Client - User: eliminaizione di %s\n", buffer.message);
+        //controllo atoi
+        num = atoi(buffer.message);
     }
-    //cancella dall'array all'indirizzo selezionato
-    cJSON_DeleteItemFromArray(list,num);
-    saveDatabase(list);
+
+    if (num > 0 && num <= nContacts){
+        // trova elemento corrispondente nell'elenco contatti
+        int index = 0;
+        cJSON * elementDeleted = cJSON_GetArrayItem(found, (num-1));
+        cJSON * element = list->child;
+        while(element){
+            if(strcmp(cJSON_Print(elementDeleted), cJSON_Print(element)) == 0) {
+                break;
+            }
+            index ++;
+            element= element->next;
+        }
+        printf("Client - User: eliminazione di %s\n", cJSON_Print(element));
+        // non so se vogliamo aggiungere un controllo. Del tipo: "Vuoi veramente eliminare <nome contatto>?"
+        
+        //cancella dall'array all'indirizzo selezionato
+        cJSON_DeleteItemFromArray(list,index);
+        saveDatabase(list);
+    }
 }
 
-void editFromList(cJSON *list, int connectSocket)
+void editFromList(cJSON *found, cJSON *list, int connectSocket, MSG buffer)
 {
-    MSG buffer;
-    strcpy(buffer.message,"mandami l'indice del contatto da modificare");
-    send(connectSocket,buffer.message,strlen(buffer.message),0);
+    strcat(buffer.message,"mandami l'indice del contatto da modificare");
+    send(connectSocket,&buffer, sizeof(buffer), 0);
 
-    //controllo atoi
-    int num = atoi(buffer.message);
-    int nContacts = cJSON_GetArraySize(list);
-    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0 || num < 0 || num > nContacts)
+    int num = -1;
+    int nContacts = cJSON_GetArraySize(found);
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0)
         printf("Errore nella ricezione dei dati.\n");
     else {
-        strcpy(cred.user, buffer.message);
-        printf("Client - User: modifica di %s\n", buffer.message);
+        //controllo atoi
+        num = atoi(buffer.message);
     }
 
-    cJSON* element = cJSON_GetArrayItem(list,num);
-    sprintf(buffer.message,"contatto: \n%s\n%s\n%d\n%s\n%s\nmodifichiamolo?[y/N]\n",cJSON_GetObjectItem(element,"name")->valuestring,cJSON_GetObjectItem(element,"surname")->valuestring,cJSON_GetObjectItem(element,"age")->valueint,cJSON_GetObjectItem(element,"email")->valuestring,cJSON_GetObjectItem(element,"phone")->valuestring);
-    send(connectSocket,buffer.message,strlen(buffer.message),0);
+    if (num > 0 && num <= nContacts){
+        // trova elemento corrispondente nell'elenco contatti
+        int index = 0;
+        cJSON * elementDeleted = cJSON_GetArrayItem(found, (num-1));
+        cJSON * element = list->child;
+        while(element){
+            if(strcmp(cJSON_Print(elementDeleted), cJSON_Print(element)) == 0) {
+            break;
+        }
+        index ++;
+        element= element->next;
+        }
 
-    if((recv(connectSocket,&buffer,sizeof(buffer), 0)))
-        printf("Errore nella ricezione dei dati.\n");
-    else {
-        strcpy(cred.user, buffer.message);
-        printf("Client - User: modifica di %s\n", buffer.message);
-    }
+        strcpy(buffer.message, "");
+        sprintf(buffer.message,"contatto: \n%s\n%s\n%d\n%s\n%s\nmodifichiamolo?[y/N]\n",cJSON_GetObjectItem(element,"name")->valuestring,cJSON_GetObjectItem(element,"surname")->valuestring,cJSON_GetObjectItem(element,"age")->valueint,cJSON_GetObjectItem(element,"email")->valuestring,cJSON_GetObjectItem(element,"phone")->valuestring);
+        send(connectSocket,&buffer, sizeof(buffer), 0);
 
-    if(strcmp(buffer.message,"y")){
-        //edit
-        cJSON* nuovaPersona = creaPersona(connectSocket);
-        cJSON_ReplaceItemInArray(list,num,nuovaPersona);
+        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0)
+            printf("Errore nella ricezione dei dati.\n");
+        else {
+            if(strcmp((buffer.message),"y") == 0){
+                //edit
+                printf("Client - User: modifica di %s\n", cJSON_Print(element));
+                cJSON* nuovaPersona = creaPersona(connectSocket);
+                printf("Client - User: modificato con %s\n", cJSON_Print(nuovaPersona));
+                cJSON_ReplaceItemInArray(list,index,nuovaPersona);
+                saveDatabase(list);
+            }
+        }
     }
 }
 
@@ -107,6 +135,7 @@ static cJSON * loadDatabase()
 
 void saveDatabase(cJSON * jsonArray){
     //creazione di una stringa in formato json con tutti gli oggetti
+        utils_sortByKey(jsonArray, "surname");
         char *json_str = cJSON_Print(jsonArray);
      // write the JSON string to a file 
         FILE * fp = fopen("data.json", "w"); 
@@ -203,7 +232,7 @@ cJSON *creaPersona(int connectSocket)
     return jsonItem;
 }
 
-void printContent(cJSON * array, int connectSocket,MSG buffer)
+MSG printContent(cJSON * array, int connectSocket,MSG buffer)
 {
     char elementString[1024];
     int nContacts = 0;
@@ -261,23 +290,18 @@ void printContent(cJSON * array, int connectSocket,MSG buffer)
             i++;
         }
     }
-    sendMenu(connectSocket, buffer);
+    return buffer;
 }
 
 void readContent(int connectSocket, MSG buffer)
 {
     cJSON *jsonArray = loadDatabase();
     strcpy(buffer.message, "---------- LEGGI LA RUBRICA ----------\n");
-    printContent(jsonArray,connectSocket,buffer);
+    buffer = printContent(jsonArray,connectSocket,buffer);
+    sendMenu(connectSocket, buffer);
 }
 
-static char * lowercase(char * stringa)
-{
-    for(char * ptr = stringa; *ptr; ptr++) *ptr = tolower(*ptr);
-    return stringa;
-}
-
-void search(int connectSocket, MSG buffer, operationOnList op)
+MSG search(int connectSocket, MSG buffer, operationOnList op)
 {   
     cJSON *jsonArray = loadDatabase();
     cJSON *foundArr = cJSON_CreateArray();
@@ -307,7 +331,7 @@ void search(int connectSocket, MSG buffer, operationOnList op)
             snprintf(nameSurname, sizeof(nameSurname), "%s %s", cJSON_GetObjectItem(element,"name")->valuestring, cJSON_GetObjectItem(element,"surname")->valuestring);
             snprintf(surnameName, sizeof(surnameName), "%s %s", cJSON_GetObjectItem(element,"surname")->valuestring, cJSON_GetObjectItem(element,"name")->valuestring);
 
-            if(strstr(lowercase(nameSurname), lowercase(searchName)) || strstr(lowercase(surnameName), lowercase(searchName)))
+            if(strstr((nameSurname), utils_lowercase(searchName)) || strstr(utils_lowercase(surnameName), utils_lowercase(searchName)))
                 cJSON_AddItemToArray(foundArr, cJSON_Duplicate(element, 1));
 
             element = element->next;
@@ -318,15 +342,16 @@ void search(int connectSocket, MSG buffer, operationOnList op)
         if(cJSON_GetArraySize(foundArr) > 0)
         {
             strcpy(buffer.message, "");
-            printContent(foundArr,connectSocket,buffer); //diventata una op?
+            buffer = printContent(foundArr,connectSocket,buffer); //diventata una op?
+            
             if(op != NULL)
-                op(foundArr,connectSocket);
+                op(foundArr,jsonArray,connectSocket, buffer);
         } else
         {
             strcpy(buffer.message, "Nessun contatto trovato.\n");
-            sendMenu(connectSocket, buffer);
         }
     }
+    return buffer;
 }
 
 int verifica(t_credenziali cred)
@@ -440,7 +465,8 @@ int choiseHandler(int connectSocket, MSG choise,sem_t *sem)
         readContent(connectSocket, buffer);
         break;
     case 's':
-        search(connectSocket, buffer,NULL);
+        buffer = search(connectSocket, buffer,NULL);
+        sendMenu(connectSocket, buffer);
         break;
     case 'l':
         login(connectSocket, buffer);
@@ -449,6 +475,8 @@ int choiseHandler(int connectSocket, MSG choise,sem_t *sem)
         if (choise.isAdmin == 1){
             sem_wait(sem);
             search(connectSocket,buffer,editFromList);
+            strcpy(buffer.message, "");
+            sendMenu(connectSocket, buffer);
             sem_post(sem);
         }
         break;
@@ -456,6 +484,8 @@ int choiseHandler(int connectSocket, MSG choise,sem_t *sem)
         if (choise.isAdmin == 1){
             sem_wait(sem);
             search(connectSocket,buffer,removeFromList);
+            strcpy(buffer.message, "");
+            sendMenu(connectSocket, buffer);
             sem_post(sem);
         }
         break;
@@ -702,7 +732,7 @@ cJSON* searchAndReturn(int connectSocket, MSG buffer)
             snprintf(nameSurname, sizeof(nameSurname), "%s %s", cJSON_GetObjectItem(element,"name")->valuestring, cJSON_GetObjectItem(element,"surname")->valuestring);
             snprintf(surnameName, sizeof(surnameName), "%s %s", cJSON_GetObjectItem(element,"surname")->valuestring, cJSON_GetObjectItem(element,"name")->valuestring);
 
-            if(strstr(lowercase(nameSurname), lowercase(searchName)) || strstr(lowercase(surnameName), lowercase(searchName)))
+            if(strstr(utils_lowercase(nameSurname), utils_lowercase(searchName)) || strstr(utils_lowercase(surnameName), utils_lowercase(searchName)))
                 cJSON_AddItemToArray(foundArr, cJSON_Duplicate(element, 1));
 
             element = element->next;
