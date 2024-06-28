@@ -10,5 +10,5 @@ mkdir -p ../bin;
 
 # "-l" per linkare la libreria cjson 
 # (intallarla con il pakage manager, successivamente cartella vendor con .h e .c della libreria?)
-gcc ../build/server.o ../build/cJSON.o ../build/cJSON_Utils.o ../build/server_utils.o -o ../bin/server;
+gcc ../build/server.o ../build/cJSON.o ../build/cJSON_Utils.o ../build/server_utils.o -o ../bin/server -lssl -lcrypto;
 ../bin/server ;

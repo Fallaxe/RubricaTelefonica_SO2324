@@ -9,6 +9,41 @@
 
 int serverSocket;
 
+void hashToHexString(const unsigned char *hash, int length, char *output) {
+    const char *hexChars = "0123456789abcdef";
+    for (int i = 0; i < length; i++) {
+        output[i * 2] = hexChars[(hash[i] >> 4) & 0xF];
+        output[i * 2 + 1] = hexChars[hash[i] & 0xF];
+    }
+    output[length * 2] = '\0'; // determinare la fine della stringa
+}
+void handleErrors(void) {
+    ERR_print_errors_fp(stderr);
+    abort();
+}
+void inToSha256(const char *inToHash, char *destination)
+{
+    unsigned char mid[EVP_MAX_MD_SIZE];
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    if(mdctx == NULL) handleErrors();
+
+    if(1 != EVP_DigestInit_ex(mdctx, EVP_sha256(), NULL))
+        handleErrors();
+
+    if(1 != EVP_DigestUpdate(mdctx, inToHash, strlen(inToHash)))
+        handleErrors();
+
+    unsigned int len = 0;
+    if(1 != EVP_DigestFinal_ex(mdctx, mid, &len))
+        handleErrors();
+
+    EVP_MD_CTX_free(mdctx);
+
+
+    hashToHexString(mid,len,destination);
+
+}
+
 void clean_stdin() {
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
@@ -367,8 +402,13 @@ int verifica(t_credenziali cred)
         printf("Errore file password non trovato.");
         return 0;
     } else {
-        while(fscanf(fptr,"%s %s\n", admin.user, admin.password) != -1) {
-            if ((strcmp(cred.user, admin.user) == 0) && (strcmp(cred.password, admin.password) == 0)) {
+        char hashPSWadmin[CONVERTION_SHA256_MAX];
+        while(fscanf(fptr,"%s %s\n", admin.user, hashPSWadmin) != -1) {
+
+            char hashPSWinserita[CONVERTION_SHA256_MAX];
+            inToSha256(cred.password,hashPSWinserita);
+
+            if ((strcmp(cred.user, admin.user) == 0) && (strcmp(hashPSWadmin, hashPSWinserita) == 0)) {
                 login = 1;
                 printf("Login effettuato.\n");
                 break;                         
@@ -543,6 +583,7 @@ void customSigHandler(){
         printf("\nProcesso padre(%d) terminato\n",ppidServerInit);
         exit(0);
     }
+    
     printf("\nprocesso figlio con pid %d terminato\n",getpid());
     exit(1);
 }
@@ -672,7 +713,7 @@ int createSettings(){
         printf("%s : %s conferma? [y/N]", admin.user, admin.password);
 
         char scelta;
-        scanf("%c", &scelta); //spazio per evitare che venga preso un '\n'
+        scanf("%c", &scelta);
 
         printf("hai scelto: %c\n",scelta);
         switch(scelta){
@@ -687,7 +728,10 @@ int createSettings(){
                     return 1;
                 }
                 printf("impostazioni salvate con successo!\n\n");
-                fprintf(fpSettings,"%s %s",admin.user,admin.password);
+                char hash[CONVERTION_SHA256_MAX];
+                inToSha256(admin.password,hash);
+                fprintf(fpSettings,"%s %s",admin.user, hash);
+                //fwrite(hash,sizeof(unsigned char),32,fpSettings);
 
                 fflush(fpSettings);
                 fclose(fpSettings);
@@ -702,57 +746,3 @@ int createSettings(){
     fclose(fp);
     return 1;
 }
-
-/*
-cJSON* searchAndReturn(int connectSocket, MSG buffer)
-{
-    cJSON *jsonArray = loadDatabase();
-    cJSON *foundArr = cJSON_CreateArray();
-    char searchName[25];
-    
-    if (jsonArray == NULL || cJSON_GetArraySize(jsonArray) == 0)
-    {
-        strcpy(buffer.message, "Non ci sono contatti salvati.\n");
-        sendMenu(connectSocket, buffer);
-    } else
-    {
-        strcpy(buffer.message, "Inserire nome della persona da cercare:\n");
-        send(connectSocket,&buffer, sizeof(buffer),0);
-
-        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
-            printf("Errore nella ricezione dei dati.\n");
-        } else {
-            strcpy(searchName, buffer.message);
-            printf("Client - Ricerca: %s\n", buffer.message);
-        }
-
-        cJSON *element = jsonArray->child;
-        char nameSurname[25];
-        char surnameName[25];
-        while (element)
-        {
-            snprintf(nameSurname, sizeof(nameSurname), "%s %s", cJSON_GetObjectItem(element,"name")->valuestring, cJSON_GetObjectItem(element,"surname")->valuestring);
-            snprintf(surnameName, sizeof(surnameName), "%s %s", cJSON_GetObjectItem(element,"surname")->valuestring, cJSON_GetObjectItem(element,"name")->valuestring);
-
-            if(strstr(utils_lowercase(nameSurname), utils_lowercase(searchName)) || strstr(utils_lowercase(surnameName), utils_lowercase(searchName)))
-                cJSON_AddItemToArray(foundArr, cJSON_Duplicate(element, 1));
-
-            element = element->next;
-        }
-
-        cJSON_Delete(element);
-      
-        if(cJSON_GetArraySize(foundArr) > 0)
-        {
-            strcpy(buffer.message, "");
-            printContent(connectSocket, buffer, foundArr);
-            return foundArr; 
-        } else
-        {
-            strcpy(buffer.message, "Nessun contatto trovato.\n");
-            sendMenu(connectSocket, buffer);
-            return NULL;
-        }
-    }
-}
-*/

@@ -13,3 +13,6 @@ $(OUT_DIR)/client.o: client.c client.h
 clean:
 	@rm -rf $(OUT_DIR)
 	@echo "Tutti i file *.o sono stati cancellati."
+run:
+	@echo "eseguendo un client da makefile..."
+	@../bin/client

@@ -22,9 +22,13 @@
 #include <semaphore.h>
 #include <sys/mman.h>
 #include <ctype.h>
+#include <openssl/evp.h>
+#include <openssl/err.h>
 
 #include "server_utils.h"
-#include "../vendor/cjson/cJSON.h" //installabile via package manager
+
+//fonte: https://github.com/DaveGamble/cJSON
+#include "../vendor/cjson/cJSON.h"
 #include "../vendor/cjson/cJSON_Utils.h"
 
 #define SERVERPORT 12345
@@ -33,6 +37,7 @@
 #define BUFFER_MAX 1024
 #define MAX_CLIENT 5
 #define FILE_USERS "password.txt"
+#define CONVERTION_SHA256_MAX (EVP_MAX_MD_SIZE *2 + 1) //usato per la coonversione unsigned char to char nei txt
 
 typedef struct MSG {
     int isAdmin;
@@ -40,48 +45,12 @@ typedef struct MSG {
 } MSG;
 
 typedef void (*operationOnList)(cJSON *found, cJSON* list, int connectSocket, MSG buffer);
-// typedef struct person{
-//     char name[25];
-//     int age;
-//     char email[25];
-// }t_person;
 
 typedef struct credenziali
 {
     char user[25];
     char password[25];
 } t_credenziali;
-
-char *contactBase =
-"{\
-    \n\"name\": \n{\
-        \n\"question\": \"Inserire il nome del contatto: \n\", \
-        \n\"type\": \"string\", \
-        \n\"dimension\": 12 \
-    \n}, \
-    \n\"surname\": \n{\
-        \n\"question\": \"Inserire il cognome del contatto: \n\", \
-        \n\"type\": \"string\", \
-        \n\"dimension\": 12 \
-    \n}, \
-    \n\"age\": \n{\
-        \n\"question\": \"Inserire l'età del contatto: \n\", \
-        \n\"type\": \"int\", \
-        \n\"max\": 99, \
-        \n\"min\": 1\
-    \n}, \
-    \n\"email\": \n{\
-        \n\"question\": \"Inserire l'email del contatto: \n\", \
-        \n\"type\": \"string\", \
-        \n\"dimension\": 30 \
-    \n}, \
-    \n\"phone\": \n{\
-        \n\"question\": \"Inserire il numero di telefono del contatto: \n\", \
-        \n\"type\": \"string\", \
-        \n\"dimension\": 16, \
-        \n\"useOnly\": \"+ 0123456789\" \
-    \n} \
-\n}";
 
 t_credenziali cred;
 char *benvenuto = "Benvenuto client\n";
@@ -112,3 +81,8 @@ MSG  printContent(cJSON * array, int connectSocket,MSG buffer);
 static cJSON * loadDatabase();
 void saveDatabase(cJSON * list);
 cJSON* creaPersona(int connectSocket);
+
+//  hash utilites (sha256)
+void hashToHexString(const unsigned char *hash, int length, char *output);
+void handleErrors(void);
+void inToSha256(const char *inToHash, char *destination);
