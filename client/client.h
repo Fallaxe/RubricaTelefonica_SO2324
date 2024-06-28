@@ -49,4 +49,6 @@ void login(int socket, MSG buffer);
 int parser(char *argomenti[], int max);
 void requestHome(int socket, MSG buffer);
 
-void customSigHandler();
+//gestione segnali
+void customSigHandler(); // interruzione: ctrl+C
+void sigpipe_handler(int signo); // server chiude la connessione

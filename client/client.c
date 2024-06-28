@@ -7,7 +7,7 @@ int main(int argc, char * argv[]) {
     /* buffer bidirezionale per messaggi */
     MSG buffer;
     buffer.isAdmin = 0;
-
+    signal(SIGPIPE, sigpipe_handler);
     signal(SIGINT,customSigHandler);
 
     //printf("argc = %d\n", argc);
@@ -121,4 +121,9 @@ void customSigHandler(){
     printf("\ninterruzione ricevuta: chiusura socket.");
     close(clientSocket);
     exit(1);
+}
+void sigpipe_handler(int signo) {
+    printf("Connessione chiusa dal server.\n");
+    close(clientSocket);
+    exit(0);  // Esci dall'applicazione o gestisci la riconnessione
 }
