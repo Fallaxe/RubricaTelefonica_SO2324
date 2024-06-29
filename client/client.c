@@ -6,7 +6,7 @@ static void customSigHandler() {
     close(clientSocket);
     exit(1);
 }
-static void sigpipe_handler() {
+static void sigpipe_handler(int signo) {
     printf("Connessione chiusa dal server.\n");
     close(clientSocket);
     exit(0);

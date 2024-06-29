@@ -59,6 +59,7 @@ char *scelte = "\t\tv - visita\n\t\ts - ricerca\n";
 char *scelteLogin = "\t\tl - login admin\n";
 char *scelteadmin= "\t\ta - aggiungi contatto\n\t\tm - modifica\n\t\tr - rimuovi contatto\n";
 char *sceltaUscita = "\t\tx - esci\n\nCosa vuoi fare?\n";
+int serverSocket;
 
 int ppidServerInit=1; //dichiarata solo per identificare il padre
 void sendMenu(); //manda il menu' al client

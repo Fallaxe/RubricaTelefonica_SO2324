@@ -7,8 +7,6 @@
 
 #include "server.h"
 
-int serverSocket;
-
 void hashToHexString(const unsigned char *hash, int length, char *output) {
     const char *hexChars = "0123456789abcdef";
     for (int i = 0; i < length; i++) {
@@ -427,8 +425,8 @@ int verifica(t_credenziali cred)
             inToSha256(cred.password,hashPSWinserita);
 
             if ((strcmp(cred.user, admin.user) == 0) && (strcmp(hashPSWadmin, hashPSWinserita) == 0)) {
-                login = 1;
-                printf("Login effettuato.\n");
+        login = 1;
+        printf("Login effettuato.\n");                     
                 break;                         
             }
         }
@@ -729,18 +727,18 @@ int createSettings(){
 
         //problemi di gestione in caso di overflow
         do{
-            printf("nome admin: ");
+        printf("nome admin: ");
             scanf("%24s",admin.user);
         }while(strlen(admin.user)>24);
         clean_stdin();
-
+        
         //per ora non fa lo sha --> openssl manca/libreria
         do{   
             printf("password (!)max 24 caratteri, sarà applicato uno sha(!):");
             scanf("%24s",admin.password);
         }while(strlen(admin.password) > 24);
         clean_stdin();
-
+        
         printf("%s : %s conferma? [y/N]", admin.user, admin.password);
 
         char scelta;
@@ -774,6 +772,9 @@ int createSettings(){
                 return 0;
         }
     }
+    fscanf(fp,"%s %s",cred.user,cred.password);
+    //printf("letti %s %s\n",cred.user,cred.password);
+    printf("impostazioni server caricate con successo!\n");
     fclose(fp);
     return 1;
 }
