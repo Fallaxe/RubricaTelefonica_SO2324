@@ -543,10 +543,13 @@ int choiseHandler(int connectSocket, MSG choise,sem_t *sem)
     case 'm':
         if (choise.isAdmin == 1){
             sem_wait(sem);
+            semPtr = &sem;
+            criticalSection = 1;
             buffer = search(connectSocket,buffer,editFromList);
             if (strlen(buffer.message) == 0)
                 strcpy(buffer.message, "Non ci sono contatti salvati.\n");
             sem_post(sem);
+            criticalSection = 0;
         }
         else
             strcpy(buffer.message, "Comando non riconosciuto.\n");
@@ -556,10 +559,13 @@ int choiseHandler(int connectSocket, MSG choise,sem_t *sem)
     case 'r':
         if (choise.isAdmin == 1){
             sem_wait(sem);
+            semPtr = &sem;
+            criticalSection = 1;
             buffer = search(connectSocket,buffer,removeFromList);
             if (strlen(buffer.message) == 0)
                 strcpy(buffer.message, "Non ci sono contatti salvati.\n");
             sem_post(sem);
+            criticalSection = 0;
         }
         else
             strcpy(buffer.message, "Comando non riconosciuto.\n");
@@ -587,12 +593,15 @@ int choiseHandler(int connectSocket, MSG choise,sem_t *sem)
             //     strcpy(buffer.message,"");
             // }
             sem_wait(sem); //lock semaphore
+            semPtr = &sem;
+            criticalSection = 1;
             //"problema" se nell'attesa scrivo viene messo nel buffer del nome
             int isAdded = aggiungiPersona(connectSocket, buffer);
             strcpy(buffer.message, (isAdded ==1 ? 
             "aggiunto contatto!\n" :
             "errore nell'aggiunta:\nil nome deve essere minore di 12 \nl'età minore di 100 e maggiore di 0\ne la mail lunga al massimo 25 caratteri\n")); //pulisce buffer
             sem_post(sem); // unlock semaphore
+            criticalSection = 0;
         } else {
             strcpy(buffer.message, "Comando non riconosciuto.\n");
         }
@@ -615,6 +624,15 @@ void customSigHandler(){
     
     printf("\nprocesso figlio con pid %d terminato\n",getpid());
     exit(1);
+}
+
+void customSigPipeHandler(int signo){  
+    printf("\nClient con pid %d terminato.\n",getpid());
+    if(criticalSection == 1) {
+        printf("Il client era in sezione critica. Sblocco il semaforo.\n");
+        sem_post(*semPtr); // se il processo era il sezione critica rilascia semaforo
+    }
+    exit(0);
 }
 
 
@@ -647,6 +665,7 @@ void main(int argc, char const *argv[])
     if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
         perror("setsockopt(SO_REUSEADDR) failed");
 
+    signal(SIGPIPE, customSigPipeHandler);
     signal(SIGINT,customSigHandler);
 
     serverAddress.sin_family = AF_INET;         // IPv4

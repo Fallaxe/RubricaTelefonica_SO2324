@@ -61,6 +61,9 @@ char *scelteadmin= "\t\ta - aggiungi contatto\n\t\tm - modifica\n\t\tr - rimuovi
 char *sceltaUscita = "\t\tx - esci\n\nCosa vuoi fare?\n";
 int serverSocket;
 
+sem_t **semPtr;
+int criticalSection;
+
 int ppidServerInit=1; //dichiarata solo per identificare il padre
 void sendMenu(); //manda il menu' al client
 int choiseHandler(int connectSocket, MSG choise,sem_t *sem); //gestisce la richiesta restituendo l'intero corrispondete
