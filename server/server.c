@@ -7,46 +7,6 @@
 
 #include "server.h"
 
-void hashToHexString(const unsigned char *hash, int length, char *output) {
-    const char *hexChars = "0123456789abcdef";
-    for (int i = 0; i < length; i++) {
-        output[i * 2] = hexChars[(hash[i] >> 4) & 0xF];
-        output[i * 2 + 1] = hexChars[hash[i] & 0xF];
-    }
-    output[length * 2] = '\0'; // determinare la fine della stringa
-}
-void handleErrors(void) {
-    ERR_print_errors_fp(stderr);
-    abort();
-}
-void inToSha256(const char *inToHash, char *destination)
-{
-    unsigned char mid[EVP_MAX_MD_SIZE];
-    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
-    if(mdctx == NULL) handleErrors();
-
-    if(1 != EVP_DigestInit_ex(mdctx, EVP_sha256(), NULL))
-        handleErrors();
-
-    if(1 != EVP_DigestUpdate(mdctx, inToHash, strlen(inToHash)))
-        handleErrors();
-
-    unsigned int len = 0;
-    if(1 != EVP_DigestFinal_ex(mdctx, mid, &len))
-        handleErrors();
-
-    EVP_MD_CTX_free(mdctx);
-
-
-    hashToHexString(mid,len,destination);
-
-}
-
-void clean_stdin() {
-    int c;
-    while ((c = getchar()) != '\n' && c != EOF);
-}
-
 void removeFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer)
 {
     strcat(buffer.message,"Inserisci l'indice del contatto da eliminare. x per tornare al menù\n");

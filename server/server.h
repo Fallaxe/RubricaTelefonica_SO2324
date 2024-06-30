@@ -22,8 +22,6 @@
 #include <semaphore.h>
 #include <sys/mman.h>
 #include <ctype.h>
-#include <openssl/evp.h>
-#include <openssl/err.h>
 
 #include "server_utils.h"
 
@@ -79,15 +77,9 @@ int aggiungiPersona(int connectSocket, MSG buffer);
 
 void customSigHandler();
 int createSettings();
-void clean_stdin();
 void removeFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
 void editFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
 MSG  printContent(cJSON * array, int connectSocket,MSG buffer);
 static cJSON * loadDatabase();
 void saveDatabase(cJSON * list);
 cJSON *creaPersona(int connectSocket, MSG buffer);
-
-//  hash utilites (sha256)
-void hashToHexString(const unsigned char *hash, int length, char *output);
-void handleErrors(void);
-void inToSha256(const char *inToHash, char *destination);
