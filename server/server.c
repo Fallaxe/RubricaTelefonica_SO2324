@@ -344,6 +344,7 @@ MSG printContent(cJSON * array, int connectSocket,MSG buffer)
             //non invia ancora al client ma print solo al server
             //problema: se mandiamo  l'intera lista il buffer dovrebbe andare in overflow sulla recezione/invio? (non riceve tutto credo)
             //UPDATE: Per adesso invia 3 contatti per volta e chiede se si vuole cambiare pagina per continuare.
+            // non funziana quando si chiede l'invio della nuova pagina!!!
 
             // Inizio pagina
             if(i%(contactsInPage) == 1) {
@@ -843,6 +844,7 @@ int createSettings(char const *argomenti[],int max){
 
         char scelta;
         scanf("%c", &scelta);
+        clean_stdin();
         printf("hai scelto: %c\n",scelta);
         switch(scelta){
 
