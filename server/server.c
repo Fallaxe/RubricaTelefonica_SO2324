@@ -2,7 +2,7 @@
     -> ascolto connessioni
     -> messaggio di benvenuto
     -> la gestione delle varie connessioni è gestita da fork() e dai child
-    -> 
+    -> nelle scelte N è maiuscolo perchè è la scelta di default
 */
 
 #include "server.h"
@@ -40,7 +40,7 @@ int removeFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer)
     }
     
     char elementStr[1024];
-    snprintf(elementStr, sizeof(elementStr), "Contatto:\n\tNome: %s\n\tCognome: %s\n\tEtà: %d\n\tEmail: %s\n\tTelefono: %s\nATTENZIONE. Vuoi confermare la rimozione? [Y/N]\n",
+    snprintf(elementStr, sizeof(elementStr), "Contatto:\n\tNome: %s\n\tCognome: %s\n\tEtà: %d\n\tEmail: %s\n\tTelefono: %s\nATTENZIONE. Vuoi confermare la rimozione? [y/N]\n",
                                             cJSON_GetObjectItem(element,"name")->valuestring, cJSON_GetObjectItem(element,"surname")->valuestring,
                                             cJSON_GetObjectItem(element,"age")->valueint, cJSON_GetObjectItem(element,"email")->valuestring,
                                             cJSON_GetObjectItem(element,"phone")->valuestring); 
@@ -96,7 +96,7 @@ int editFromList(cJSON *found, cJSON *list, int connectSocket, MSG buffer)
     }
 
     char elementStr[1024];
-    snprintf(elementStr, sizeof(elementStr), "Contatto:\n\tNome: %s\n\tCognome: %s\n\tEtà: %d\n\tEmail: %s\n\tTelefono: %s\nATTENZIONE. Vuoi modificarlo? [Y/N]\n",
+    snprintf(elementStr, sizeof(elementStr), "Contatto:\n\tNome: %s\n\tCognome: %s\n\tEtà: %d\n\tEmail: %s\n\tTelefono: %s\nATTENZIONE. Vuoi modificarlo? [y/N]\n",
                                             cJSON_GetObjectItem(element,"name")->valuestring, cJSON_GetObjectItem(element,"surname")->valuestring,
                                             cJSON_GetObjectItem(element,"age")->valueint, cJSON_GetObjectItem(element,"email")->valuestring,
                                             cJSON_GetObjectItem(element,"phone")->valuestring); 
@@ -306,7 +306,7 @@ cJSON *creaPersona(int connectSocket, MSG buffer)
     }
 
     char elementStr[1024];
-    snprintf(elementStr, sizeof(elementStr), "Aggiungo:\n\tNome: %s\n\tCognome: %s\n\tEtà: %d\n\tEmail: %s\n\tTelefono: %s\nVuoi confermare? [Y/N]\n",
+    snprintf(elementStr, sizeof(elementStr), "Aggiungo:\n\tNome: %s\n\tCognome: %s\n\tEtà: %d\n\tEmail: %s\n\tTelefono: %s\nVuoi confermare? [y/N]\n",
                                             cJSON_GetObjectItem(jsonItem,"name")->valuestring, cJSON_GetObjectItem(jsonItem,"surname")->valuestring,
                                             cJSON_GetObjectItem(jsonItem,"age")->valueint, cJSON_GetObjectItem(jsonItem,"email")->valuestring,
                                             cJSON_GetObjectItem(jsonItem,"phone")->valuestring); 
@@ -362,7 +362,7 @@ MSG printContent(cJSON * array, int connectSocket,MSG buffer)
             // Fine pagina
             if (i < nContacts && i%contactsInPage == 0)
             {
-                strcat(buffer.message, "Vuoi vedere la pagina successiva? [Y/N]\n");
+                strcat(buffer.message, "Vuoi vedere la pagina successiva? [y/N]\n");
                 send(connectSocket,&buffer, sizeof(buffer),0);
 
                 if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0)
@@ -571,8 +571,8 @@ int choiseHandler(int connectSocket, MSG buffer,sem_t *sem)
 
             // attesa se semaforo occupato
             if(valueSem == 0){
-                strcpy(buffer.message,"Qualcun altro sta modificando i contatti. Vuoi attendere? [Y/N]\n");
-                send(connectSocket,&buffer, sizeof(buffer), 0);
+                strcpy(buffer.message,"Qualcun altro sta modificando i contatti. Vuoi attendere? [y/N]\n");
+                send(connectSocket,&buffer, sizeof(buffer), 0);\
                 
                 if(recv(connectSocket,&buffer,sizeof(buffer), 0) < 0) {
                     printf("Errore nella ricezione dei dati.\n");
@@ -605,7 +605,7 @@ int choiseHandler(int connectSocket, MSG buffer,sem_t *sem)
 
             // attesa se semaforo occupato
             if(valueSem == 0){
-                strcpy(buffer.message,"Qualcun altro sta modificando i contatti. Vuoi attendere? [Y/N]\n");
+                strcpy(buffer.message,"Qualcun altro sta modificando i contatti. Vuoi attendere? [y/N]\n");
                 send(connectSocket,&buffer, sizeof(buffer), 0);
                 
                 if(recv(connectSocket,&buffer,sizeof(buffer), 0) < 0) {
@@ -640,7 +640,7 @@ int choiseHandler(int connectSocket, MSG buffer,sem_t *sem)
 
             // attesa se semaforo occupato
             if(valueSem == 0){
-                strcpy(buffer.message,"Qualcun altro sta modificando i contatti. Vuoi attendere? [Y/N]\n");
+                strcpy(buffer.message,"Qualcun altro sta modificando i contatti. Vuoi attendere? [y/N]\n");
                 send(connectSocket,&buffer, sizeof(buffer), 0);
                 
                 if(recv(connectSocket,&buffer,sizeof(buffer), 0) < 0) {
@@ -680,7 +680,7 @@ int choiseHandler(int connectSocket, MSG buffer,sem_t *sem)
         return 1;
     }
     // dopo aver risolto l'operazione richiesta chiede se si vuole tornare al menu
-    strcat(buffer.message, "Vuoi tornare al menu? [Y/N]\n");
+    strcat(buffer.message, "Vuoi tornare al menu? [y/N]\n");
     send(connectSocket,&buffer, sizeof(buffer), 0);
 
     if(recv(connectSocket,&buffer,sizeof(buffer), 0) < 0 || strcmp(utils_lowercase(buffer.message), "y") != 0) {
@@ -837,7 +837,7 @@ int createSettings(char const *argomenti[],int max){
         }while(strlen(admin.password) > 24);
         clean_stdin();
         
-        printf("%s : %s conferma? [Y/N]", admin.user, admin.password);
+        printf("%s : %s conferma? [y/N]", admin.user, admin.password);
 
         char scelta;
         scanf("%c", &scelta);
