@@ -7,6 +7,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
+#include <sys/time.h>
+#include <sys/types.h>
 
 #define SERVERPORT 12345
 #define SERVERADDRESS "127.0.0.1"
@@ -32,10 +34,15 @@ char *homeChar = "h";
 char *loginChar = "l";
 char *loginArg = "-a";
 
+// funzioni
 static void login(int socket, MSG buffer);
 static int parser(char *argomenti[], int max);
 static void requestHome(int socket, MSG buffer);
 
-//gestione segnali
+// gestione segnali
 static void customSigHandler(); // interruzione: ctrl+C
 static void sigpipe_handler(int signo); // server chiude la connessione
+
+// pulizia stdin
+static int check_stdin();
+static void clean_stdin();

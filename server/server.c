@@ -119,7 +119,7 @@ void editFromList(cJSON *found, cJSON *list, int connectSocket, MSG buffer)
             if(strcmp((buffer.message),"y") == 0){
                 //edit
                 printf("Client - User: modifica di %s\n", cJSON_Print(element));
-                cJSON* nuovaPersona = creaPersona(connectSocket);
+                cJSON* nuovaPersona = creaPersona(connectSocket, buffer);
                 printf("Client - User: modificato con %s\n", cJSON_Print(nuovaPersona));
                 cJSON_ReplaceItemInArray(list,index,nuovaPersona);
                 saveDatabase(list);
@@ -168,6 +168,8 @@ static cJSON * loadDatabase()
         // memoria per database
         char *fileContent = calloc((size + 1), sizeof(char));    
         fread(fileContent, sizeof(char), size, fp);
+
+        fflush(fp);
         fclose(fp);
 
         // parse della stringa json
@@ -196,89 +198,130 @@ void saveDatabase(cJSON * jsonArray){
         cJSON_free(json_str);
 }
 
-cJSON *creaPersona(int connectSocket)
+cJSON *creaPersona(int connectSocket, MSG buffer)
 {
-    MSG buffer;
     cJSON *jsonItem = cJSON_CreateObject();
+    
+    // banner
+    strcpy(buffer.message, divisore);
+    strcat(buffer.message, "|               Nuovo Contatto              |\n");
+    strcat(buffer.message, divisore);
 
-    strcpy(buffer.message, "Nuovo Contatto\nInserire nome del contatto :\t");
-        send(connectSocket,&buffer, sizeof(buffer),0);
+    // creazione del contatto
+    strcat(buffer.message, "Inserire nome del contatto :\t");
+    send(connectSocket,&buffer, sizeof(buffer),0);
 
-        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
-            printf("Errore nella ricezione dei dati.\n");
-            return NULL;
-        } else {
-            //strcpy(persona.name, buffer.message);
-            if(strlen(buffer.message) > 12){
-                printf("l'utente ha superato i limiti imposti\n");
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+        printf("Errore nella ricezione dei dati.\n");
+        return NULL;
+    } 
+    else {
+        while(strlen(buffer.message) > 12) {
+            strcpy(buffer.message, "Attenzione, massimo 12 caratteri.\nInserire nome del contatto :\t");
+            send(connectSocket,&buffer, sizeof(buffer),0);
+
+            if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+                printf("Errore nella ricezione dei dati.\n");
                 return NULL;
-            }
-            cJSON_AddStringToObject(jsonItem, "name", buffer.message);
-            printf("Client - New contact: %s\n", buffer.message);
+            } 
         }
+        cJSON_AddStringToObject(jsonItem, "name", buffer.message);
+    }
 
     strcpy(buffer.message, "Inserire cognome del contatto :\t");
-        send(connectSocket,&buffer, sizeof(buffer),0);
+    send(connectSocket,&buffer, sizeof(buffer),0);
 
-        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
-            printf("Errore nella ricezione dei dati.\n");
-            return NULL;
-        } else {
-            if(strlen(buffer.message) > 12){
-                printf("l'utente ha superato i limiti imposti\n");
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+        printf("Errore nella ricezione dei dati.\n");
+        return NULL;
+    } 
+    else {
+        while(strlen(buffer.message) > 12) {
+            strcpy(buffer.message, "Attenzione, massimo 12 caratteri.\nInserire cognome del contatto :\t");
+            send(connectSocket,&buffer, sizeof(buffer),0);
+
+            if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+                printf("Errore nella ricezione dei dati.\n");
                 return NULL;
-            }
-            cJSON_AddStringToObject(jsonItem, "surname", buffer.message);
-            printf("Client - New contact: %s\n", buffer.message);
+            } 
         }
+        cJSON_AddStringToObject(jsonItem, "surname", buffer.message);
+    }
 
-        strcpy(buffer.message, "Inserire eta del contatto :\t");
-        send(connectSocket,&buffer, sizeof(buffer),0);
+    strcpy(buffer.message, "Inserire eta del contatto :\t");
+    send(connectSocket,&buffer, sizeof(buffer),0);
 
-        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
-            printf("Errore nella ricezione dei dati.\n");
-            return NULL;
-        } else {
-            
-            if(atoi(buffer.message) > 100 || atoi(buffer.message) < 1){
-                printf("l'utente ha superato i limiti imposti\n");
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+        printf("Errore nella ricezione dei dati.\n");
+        return NULL;
+     } 
+    else {
+        while(atoi(buffer.message) > 100 || atoi(buffer.message) < 1){
+            strcpy(buffer.message, "Attenzione, deve essere un numero tra 0 e 100.\nInserire eta del contatto :\t");
+            send(connectSocket,&buffer, sizeof(buffer),0);
+
+            if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+                printf("Errore nella ricezione dei dati.\n");
                 return NULL;
-            }
-
-            cJSON_AddNumberToObject(jsonItem, "age", atoi(buffer.message));
-            printf("Client - New contact: %s\n", buffer.message);
+            } 
         }
+        cJSON_AddNumberToObject(jsonItem, "age", atoi(buffer.message));
+    }
 
-        strcpy(buffer.message, "Inserire email del contatto :\t");
-        send(connectSocket,&buffer, sizeof(buffer),0);
+    strcpy(buffer.message, "Inserire email del contatto :\t");
+    send(connectSocket,&buffer, sizeof(buffer),0);
 
-        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
-            printf("Errore nella ricezione dei dati.\n");
-            return NULL;
-        } else {
-            
-            if(strlen(buffer.message) > 30){
-                printf("l'utente ha superato i limiti imposti\n");
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+        printf("Errore nella ricezione dei dati.\n");
+        return NULL;
+    } 
+    else {
+        while(strlen(buffer.message) > 30){
+            strcpy(buffer.message, "Attenzione, deve avere massimo 30 caratteri.\nInserire email del contatto :\t");
+            send(connectSocket,&buffer, sizeof(buffer),0);
+
+            if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+                printf("Errore nella ricezione dei dati.\n");
                 return NULL;
-            }
-            cJSON_AddStringToObject(jsonItem, "email", buffer.message);
-            printf("Client - New contact: %s\n", buffer.message);
+            } 
         }
+        cJSON_AddStringToObject(jsonItem, "email", buffer.message);
+    }
 
-        strcpy(buffer.message, "Inserire telefono del contatto :\t");
-        send(connectSocket,&buffer, sizeof(buffer),0);
+    strcpy(buffer.message, "Inserire telefono del contatto :\t");
+    send(connectSocket,&buffer, sizeof(buffer),0);
 
-        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
-            printf("Errore nella ricezione dei dati.\n");
-            return NULL;
-        } else {
-            if(strlen(buffer.message) > 16 || utils_strIncludeOnly(buffer.message, "+ 1234567890") == 0){
-                printf("l'utente ha superato i limiti imposti\n");
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+        printf("Errore nella ricezione dei dati.\n");
+        return NULL;
+    } 
+    else {
+        while(strlen(buffer.message) > 16 || utils_strIncludeOnly(buffer.message, "+ 1234567890") == 0){
+            strcpy(buffer.message, "Attenzione, massimo 16 caratteri.\nInserire telefono del contatto :\t");
+            send(connectSocket,&buffer, sizeof(buffer),0);
+
+            if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+                printf("Errore nella ricezione dei dati.\n");
                 return NULL;
-            }
-            cJSON_AddStringToObject(jsonItem, "phone", buffer.message);
-            printf("Client - New contact: %s\n", buffer.message);
+            } 
         }
+         cJSON_AddStringToObject(jsonItem, "phone", buffer.message);
+    }
+
+    char elementStr[1024];
+    snprintf(elementStr, sizeof(elementStr), "\tNome: %s\n\tCognome: %s\n\tEtà: %d\n\tEmail: %s\n\tTelefono: %s\nVuoi confermare? Y/N",
+                                            cJSON_GetObjectItem(jsonItem,"name")->valuestring, cJSON_GetObjectItem(jsonItem,"surname")->valuestring,
+                                            cJSON_GetObjectItem(jsonItem,"age")->valueint, cJSON_GetObjectItem(jsonItem,"email")->valuestring,
+                                            cJSON_GetObjectItem(jsonItem,"phone")->valuestring); 
+    strcpy(buffer.message, elementStr);
+    send(connectSocket,&buffer, sizeof(buffer), 0);
+
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+        printf("Errore nella ricezione dei dati.\n");
+        return NULL;
+    } else if(strcmp(utils_lowercase(buffer.message), "y") != 0) {
+        return NULL;
+    }
     return jsonItem;
 }
 
@@ -315,8 +358,8 @@ MSG printContent(cJSON * array, int connectSocket,MSG buffer)
             }
 
             // Stringa Contatto
-            snprintf(elementString, sizeof(elementString), "%d) nome: %s\ncognome: %s\netà: %d\nemail: %s\ntelefono: %s\n\n",i,cJSON_GetObjectItem(element,"name")->valuestring,cJSON_GetObjectItem(element,"surname")->valuestring,cJSON_GetObjectItem(element,"age")->valueint,cJSON_GetObjectItem(element,"email")->valuestring,cJSON_GetObjectItem(element,"phone")->valuestring); 
-            printf("dimensioni elemento: %ld\n", strlen(elementString));
+            snprintf(elementString, sizeof(elementString), "%d) Nome: %s\n   Cognome: %s\n   Età: %d\n   Email: %s\n   Telefono: %s\n\n",i,cJSON_GetObjectItem(element,"name")->valuestring,cJSON_GetObjectItem(element,"surname")->valuestring,cJSON_GetObjectItem(element,"age")->valueint,cJSON_GetObjectItem(element,"email")->valuestring,cJSON_GetObjectItem(element,"phone")->valuestring); 
+            //printf("dimensioni elemento: %ld\n", strlen(elementString));
             strcat(buffer.message, elementString);
 
             // Fine pagina
@@ -332,12 +375,9 @@ MSG printContent(cJSON * array, int connectSocket,MSG buffer)
                     printf("Client - User: %s\n", buffer.message);
                 }
 
-                if (strcmp(utils_lowercase(buffer.message), "y") == 0) {
-                    strcpy(buffer.message, "");
-                } else {
-                    strcpy(buffer.message, "");
+                strcpy(buffer.message, "");
+                if (strcmp(utils_lowercase(buffer.message), "y") != 0)
                     break;
-                }
             }
 
             element = element->next;
@@ -347,12 +387,11 @@ MSG printContent(cJSON * array, int connectSocket,MSG buffer)
     return buffer;
 }
 
-void readContent(int connectSocket, MSG buffer)
+MSG readContent(int connectSocket, MSG buffer)
 {
     cJSON *jsonArray = loadDatabase();
     strcpy(buffer.message, "");
-    buffer = printContent(jsonArray,connectSocket,buffer);
-    sendMenu(connectSocket, buffer);
+    return printContent(jsonArray,connectSocket,buffer);
 }
 
 MSG search(int connectSocket, MSG buffer, operationOnList op)
@@ -436,44 +475,42 @@ int verifica(t_credenziali cred)
     return login;
 }
 
-void login(int connectSocket, MSG buffer){
-        if(buffer.isAdmin == 1) {
-            strcpy(buffer.message, "Sei già loggato.\n");
-            sendMenu(connectSocket, buffer);
-            return;
-        }
-        t_credenziali cred;
+MSG login(int connectSocket, MSG buffer){
+    if(buffer.isAdmin == 1) {
+        strcpy(buffer.message, "Sei già loggato.\n");
+        return buffer;
+    }
+    t_credenziali cred;
         
-        // Richiede User
-        strcpy(buffer.message, "Inserire user:      ");
-        send(connectSocket,&buffer, sizeof(buffer),0);
+    // Richiede User
+    strcpy(buffer.message, "Inserire user:      ");
+    send(connectSocket,&buffer, sizeof(buffer),0);
 
-        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
-            printf("Errore nella ricezione dei dati.\n");
-        } else {
-            strcpy(cred.user, buffer.message);
-            printf("Client - User: %s\n", buffer.message);
-        }
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0)
+        printf("Errore nella ricezione dei dati.\n");
+    else {
+        strcpy(cred.user, buffer.message);
+        printf("Client - User: %s\n", buffer.message);
+    }
 
-        // Richiede Password
-        strcpy(buffer.message, "Inserire password:  ");
-        send(connectSocket,&buffer, sizeof(buffer),0);
+    // Richiede Password
+    strcpy(buffer.message, "Inserire password:  ");
+    send(connectSocket,&buffer, sizeof(buffer),0);
 
-        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
-            printf("Errore nella ricezione dei dati.\n");
-        } else {
-            strcpy(cred.password, buffer.message);
-            printf("Client - Password: %s\n", buffer.message);
-        }
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0)
+        printf("Errore nella ricezione dei dati.\n");
+    else {
+        strcpy(cred.password, buffer.message);
+        printf("Client - Password: %s\n", buffer.message);
+    }
 
-        if ( verifica(cred) == 1) {
-            buffer.isAdmin = 1;
-            strcpy(buffer.message, "Login effettuato con successo.\n\n");
+    if (verifica(cred)) {
+        buffer.isAdmin = 1;
+        strcpy(buffer.message, "Login effettuato con successo.\n\n");
+    } else
+        strcpy(buffer.message, "Attenzione username o password errati.\n\n");
 
-        } else {
-            strcpy(buffer.message, "Attenzione username o password errati.\n\n");
-        }
-        sendMenu(connectSocket, buffer);
+    return buffer;
 }
 
 int aggiungiPersona(int connectSocket, MSG buffer){
@@ -491,15 +528,15 @@ int aggiungiPersona(int connectSocket, MSG buffer){
         cJSON *jsonArray = loadDatabase();
 
         if (jsonArray == NULL) {
-            printf("Array vuoto\n");
+            printf("Non sono presenti contatti. Creazione nuovo database.\n");
             jsonArray = cJSON_CreateArray();
         }
 
-        cJSON* jsonItem = creaPersona(connectSocket);
+        cJSON* jsonItem = creaPersona(connectSocket, buffer);
         if(jsonItem != NULL)
         {
             cJSON_AddItemToArray(jsonArray,jsonItem);
-            printf("%s\n", cJSON_Print(jsonItem)); //stampa solo la persona appena inserita, non tutto l'array
+            printf("Inserito:\n%s\n", cJSON_Print(jsonItem)); //stampa solo la persona appena inserita, non tutto l'array
             saveDatabase(jsonArray);
             cJSON_Delete(jsonItem);
             return 1;
@@ -508,110 +545,150 @@ int aggiungiPersona(int connectSocket, MSG buffer){
         return 0;
 }
 
-int choiseHandler(int connectSocket, MSG choise,sem_t *sem)
+int choiseHandler(int connectSocket, MSG buffer,sem_t *sem)
 {
-    MSG buffer;
-    buffer.isAdmin = choise.isAdmin;
+    int valueSem;
 
-    printf("dimensioni risposta: %ld\n", strlen(choise.message));
-
-    if (strlen(choise.message) > 1)
+    if (strlen(buffer.message) > 1)
     {
         strcpy(buffer.message, "Comando non riconosciuto.\n");
         sendMenu(connectSocket, buffer);
         return 0;
     }
 
-    switch(*choise.message)
+    switch(*buffer.message)
     {
     case 'h':
         strcpy(buffer.message, "");
-        sendMenu(connectSocket, buffer);
         break;
     case 'v':
-        readContent(connectSocket, buffer);
+        buffer = readContent(connectSocket, buffer);
         break;
     case 's':
         buffer = search(connectSocket, buffer,NULL);
         if (strlen(buffer.message) == 0)
                 strcpy(buffer.message, "Non ci sono contatti salvati.\n");
-        sendMenu(connectSocket, buffer);
         break;
     case 'l':
-        login(connectSocket, buffer);
+        buffer = login(connectSocket, buffer);
         break;
     case 'm':
-        if (choise.isAdmin == 1){
+        if (buffer.isAdmin){
+            // controlla semaforo
+            sem_getvalue(sem,&valueSem);
+
+            // attesa se semaforo occupato
+            if(valueSem == 0){
+                strcpy(buffer.message,"Qualcun altro sta modificando i contatti. Vuoi attendere? Y/N\n");
+                send(connectSocket,&buffer, sizeof(buffer), 0);
+                
+                if(recv(connectSocket,&buffer,sizeof(buffer), 0) < 0) {
+                    printf("Errore nella ricezione dei dati.\n");
+                    strcpy(buffer.message, "Errore nella ricezione dei dati.\n");
+                    break;
+                }
+                if(strcmp(utils_lowercase(buffer.message), "y") != 0) {
+                    strcpy(buffer.message, "");
+                    break;
+                }
+            }
+            // chiude semaforo
             sem_wait(sem);
             semPtr = &sem;
             criticalSection = 1;
+
             buffer = search(connectSocket,buffer,editFromList);
-            if (strlen(buffer.message) == 0)
-                strcpy(buffer.message, "Non ci sono contatti salvati.\n");
+
+            // libera semaforo
             sem_post(sem);
             criticalSection = 0;
+
+            if (strlen(buffer.message) == 0)
+                strcpy(buffer.message, "Non ci sono contatti salvati.\n");
         }
         else
             strcpy(buffer.message, "Comando non riconosciuto.\n");
 
-        sendMenu(connectSocket, buffer);
         break;
     case 'r':
-        if (choise.isAdmin == 1){
+        if (buffer.isAdmin == 1){
+            // controlla semaforo
+            sem_getvalue(sem,&valueSem);
+
+            // attesa se semaforo occupato
+            if(valueSem == 0){
+                strcpy(buffer.message,"Qualcun altro sta modificando i contatti. Vuoi attendere? Y/N\n");
+                send(connectSocket,&buffer, sizeof(buffer), 0);
+                
+                if(recv(connectSocket,&buffer,sizeof(buffer), 0) < 0) {
+                    printf("Errore nella ricezione dei dati.\n");
+                    strcpy(buffer.message, "Errore nella ricezione dei dati.\n");
+                    sendMenu(connectSocket, buffer);
+                    break;
+                }
+                if(strcmp(utils_lowercase(buffer.message), "y") != 0) {
+                    strcpy(buffer.message, "");
+                    break;
+                }
+            }
+            // chiude semaforo
             sem_wait(sem);
             semPtr = &sem;
             criticalSection = 1;
+
             buffer = search(connectSocket,buffer,removeFromList);
-            if (strlen(buffer.message) == 0)
-                strcpy(buffer.message, "Non ci sono contatti salvati.\n");
+
+            // libera semaforo
             sem_post(sem);
             criticalSection = 0;
+            
+            if (strlen(buffer.message) == 0)
+                strcpy(buffer.message, "Non ci sono contatti salvati.\n");
         }
         else
             strcpy(buffer.message, "Comando non riconosciuto.\n");
 
-        sendMenu(connectSocket, buffer);
         break;
-    case 'x':
-        break;
+
     case 'a':
+        if (buffer.isAdmin == 1){
+            // controlla semaforo
+            sem_getvalue(sem,&valueSem);
 
-        if (choise.isAdmin == 1){
-
-            //GESTIONE DI INFORMAZIONE CHE SEI IN CODA PER LA RICHIESTA (NON FUNZIONA E NON SO PERCHE)
-            // int valueSem;
-            // int returnCode;
-            // sem_getvalue(sem,&valueSem);
-            // printf("%d\n",valueSem);
-            // if(&valueSem == 0){//?
-            //     strcpy(buffer.message,"sei in coda per l'accesso alla richiesta\n!");
-            //     send(connectSocket,&buffer, sizeof(buffer), 0);
-
-            //     // if((returnCode=recv(connectSocket, &buffer, sizeof(buffer), 0)) < 0) {
-            //     //         printf("Errore nella ricezione dei dati.\n");
-            //     //     }
-            //     strcpy(buffer.message,"");
-            // }
-            sem_wait(sem); //lock semaphore
+            // attesa se semaforo occupato
+            if(valueSem == 0){
+                strcpy(buffer.message,"Qualcun altro sta modificando i contatti. Vuoi attendere? Y/N\n");
+                send(connectSocket,&buffer, sizeof(buffer), 0);
+                
+                if(recv(connectSocket,&buffer,sizeof(buffer), 0) < 0) {
+                    printf("Errore nella ricezione dei dati.\n");
+                    strcpy(buffer.message, "Errore nella ricezione dei dati.\n");
+                    break;
+                }
+                if(strcmp(utils_lowercase(buffer.message), "y") != 0) {
+                    strcpy(buffer.message, "");
+                    break;
+                }
+            }
+            // chiude semaforo
+            sem_wait(sem);
             semPtr = &sem;
             criticalSection = 1;
-            //"problema" se nell'attesa scrivo viene messo nel buffer del nome
+
             int isAdded = aggiungiPersona(connectSocket, buffer);
-            strcpy(buffer.message, (isAdded ==1 ? 
-            "aggiunto contatto!\n" :
-            "errore nell'aggiunta:\nil nome deve essere minore di 12 \nl'età minore di 100 e maggiore di 0\ne la mail lunga al massimo 25 caratteri\n")); //pulisce buffer
+            strcpy(buffer.message, (isAdded ==1 ? "Aggiunto contatto!\n" : "Contatto non aggiunto.\n"));
             sem_post(sem); // unlock semaphore
             criticalSection = 0;
-        } else {
-            strcpy(buffer.message, "Comando non riconosciuto.\n");
-        }
-        sendMenu(connectSocket, buffer);       
+        } else
+            strcpy(buffer.message, "Comando non riconosciuto.\n"); 
+
         break;
+
     default:
         strcpy(buffer.message, "Comando non riconosciuto.\n");
-        sendMenu(connectSocket, buffer);
         break;
     }
+    sendMenu(connectSocket, buffer);
     return 1;
 }
 
@@ -706,17 +783,16 @@ void main(int argc, char const *argv[])
                     printf("Errore nella ricezione dei dati.\n");
                 } else {
                     printf("Client - isAdmin: %d, Message %s\n", buffer.isAdmin, buffer.message);
-                    
-                    // gestione delle richieste                
-                    choiseHandler(connectSocket, buffer,sem);
-                }
-                
-                if(strcmp(buffer.message, "x") == 0) {
+
+                    if(strcmp(buffer.message, "x") == 0) {
                     send(connectSocket, &buffer, sizeof(buffer), 0);
                     close(connectSocket);
                     printf("Client @ %s disconnesso.\n", clientIP);
                     // chiude il processo figlio
                     exit(1);
+                }                    
+                    // gestione delle richieste                
+                    choiseHandler(connectSocket, buffer,sem);
                 }
 
                 fflush(stdout);

@@ -67,10 +67,10 @@ int criticalSection;
 int ppidServerInit=1; //dichiarata solo per identificare il padre
 void sendMenu(); //manda il menu' al client
 int choiseHandler(int connectSocket, MSG choise,sem_t *sem); //gestisce la richiesta restituendo l'intero corrispondete
-void readContent(int connectSocket, MSG buffer); //manda i contatti presenti sul server
+MSG readContent(int connectSocket, MSG buffer); //manda i contatti presenti sul server
 MSG  search(int connectSocket, MSG buffer,operationOnList op);
 //cJSON* searchAndReturn(int connectSocket, MSG buffer);
-void login(int connectSocket, MSG buffer);
+MSG login(int connectSocket, MSG buffer);
 int verifica(t_credenziali cred);
 
 /*solo admin*/
@@ -85,7 +85,7 @@ void editFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
 MSG  printContent(cJSON * array, int connectSocket,MSG buffer);
 static cJSON * loadDatabase();
 void saveDatabase(cJSON * list);
-cJSON* creaPersona(int connectSocket);
+cJSON *creaPersona(int connectSocket, MSG buffer);
 
 //  hash utilites (sha256)
 void hashToHexString(const unsigned char *hash, int length, char *output);
