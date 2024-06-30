@@ -734,9 +734,6 @@ void main(int argc, char const *argv[])
     MSG buffer;
     buffer.isAdmin = 0;
 
-    while(createSettings(argv,argc) != 1){
-        printf("ricominciamo dal principio!\n");
-    }
 
     if((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("errore nella creazione del socket!");
@@ -747,6 +744,7 @@ void main(int argc, char const *argv[])
     if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
         perror("setsockopt(SO_REUSEADDR) failed");
 
+    
     signal(SIGPIPE, customSigPipeHandler);
     signal(SIGINT,customSigHandler);
 
@@ -758,6 +756,10 @@ void main(int argc, char const *argv[])
     if((returnCode = bind(serverSocket,(struct sockaddr*) &serverAddress, sizeof(serverAddress)))< 0){
         perror("errore nel binding");
         exit(42);
+    }
+
+    while(createSettings(argv,argc) != 1){
+        printf("ricominciamo dal principio!\n");
     }
 
     // listen
@@ -848,7 +850,7 @@ int createSettings(char const *argomenti[],int max){
             
             case 'y':
                 //fclose(fp) NON mi fa chiudere in lettura prima di riaprire in scrittura...(FUNZIONA UGUALE)
-                FILE *fpSettings = fopen("password.txt","w");
+                FILE *fpSettings = fopen(FILE_USERS,"w");
                 if (fpSettings == NULL) {
                     printf("Errore nell'apertura del file.\n");
                     return 1;

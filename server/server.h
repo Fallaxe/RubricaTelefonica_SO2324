@@ -34,7 +34,7 @@
 
 #define BUFFER_MAX 1024
 #define MAX_CLIENT 5
-#define FILE_USERS "password.txt"
+#define FILE_USERS "settings.txt"
 #define FILE_DB "data.json"
 #define CONVERTION_SHA256_MAX (EVP_MAX_MD_SIZE *2 + 1) //usato per la conversione unsigned char to char nei txt
 
