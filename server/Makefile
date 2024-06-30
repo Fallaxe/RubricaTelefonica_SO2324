@@ -35,7 +35,7 @@ $(BIN_DIR)/server: $(OUT_DIR)/server.o $(OUT_DIR)/server_utils.o $(OUT_DIR)/cJSO
 	@mkdir -p $(@D)
 	@gcc $(OUT_DIR)/server.o $(OUT_DIR)/cJSON.o $(OUT_DIR)/server_utils.o -o $(BIN_DIR)/server $(LIBS)
 	@echo "Il file server è stato creato nella cartella $(BIN_DIR)"
-	@echo "Nel caso non compili usare 'make install' per installare una dipendenza esterna"
+	@echo "Nel caso non compili usare 'make deps' per installare una dipendenza esterna"
 	@echo "Solitamente openssl in alcune disto di linux è preinstallato."
 
 $(OUT_DIR)/server.o: server.c server.h

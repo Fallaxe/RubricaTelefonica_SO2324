@@ -42,7 +42,7 @@ typedef struct MSG {
     char message[BUFFER_MAX];
 } MSG;
 
-typedef void (*operationOnList)(cJSON *found, cJSON* list, int connectSocket, MSG buffer);
+typedef int (*operationOnList)(cJSON *found, cJSON* list, int connectSocket, MSG buffer);
 
 typedef struct credenziali
 {
@@ -51,8 +51,10 @@ typedef struct credenziali
 } t_credenziali;
 
 t_credenziali cred;
-char *divisore =   "---------------------------------------------\n";
+char *divisore = "---------------------------------------------\n";
 char *menuHeader = "|              Rubrica Telefonica           |\n";
+char *contattoHeader = "|                  Contatto                 |\n";
+char *cercaHeader = "|               Cerca contatti              |\n";
 char *scelte = "\t\tv - visita\n\t\ts - ricerca\n";
 char *scelteLogin = "\t\tl - login admin\n";
 char *scelteadmin= "\t\ta - aggiungi contatto\n\t\tm - modifica\n\t\tr - rimuovi contatto\n";
@@ -77,8 +79,8 @@ int aggiungiPersona(int connectSocket, MSG buffer);
 
 void customSigHandler();
 int createSettings();
-void removeFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
-void editFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
+int removeFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
+int editFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
 MSG  printContent(cJSON * array, int connectSocket,MSG buffer);
 static cJSON * loadDatabase();
 void saveDatabase(cJSON * list);
