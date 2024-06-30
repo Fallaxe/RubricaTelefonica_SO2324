@@ -35,8 +35,14 @@
 #define BUFFER_MAX 1024
 #define MAX_CLIENT 5
 #define FILE_USERS "password.txt"
-#define CONVERTION_SHA256_MAX (EVP_MAX_MD_SIZE *2 + 1) //usato per la coonversione unsigned char to char nei txt
+#define CONVERTION_SHA256_MAX (EVP_MAX_MD_SIZE *2 + 1) //usato per la conversione unsigned char to char nei txt
 
+/*
+* I tipi utilizzati sono 
+* MSG per l'invio dei messaggi e la identificazione degli utenti loggati,
+* operationOnLit per la definizione di operazioni da eseguire sulla ricerca,
+* credenziali usato per immagazzinare le credenziali di accesso al server.
+*/
 typedef struct MSG {
     int isAdmin;
     char message[BUFFER_MAX];
@@ -50,7 +56,6 @@ typedef struct credenziali
     char password[25];
 } t_credenziali;
 
-t_credenziali cred;
 char *divisore = "---------------------------------------------\n";
 char *menuHeader = "|              Rubrica Telefonica           |\n";
 char *contattoHeader = "|                  Contatto                 |\n";
@@ -60,30 +65,37 @@ char *scelteLogin = "\t\tl - login admin\n";
 char *scelteadmin= "\t\ta - aggiungi contatto\n\t\tm - modifica\n\t\tr - rimuovi contatto\n";
 char *sceltaUscita = "\t\tx - esci\n\nCosa vuoi fare?\n";
 int serverSocket;
-char * resetArg = "-r";
+char * resetArg = "-r"; // FLAG di utilizzo del reset user e password dell'admin
 
-sem_t **semPtr;
-int criticalSection;
-
+sem_t **semPtr; // utilizzo di un puntatore per la gestione delle interruzioni sulle mutue esclusioni
+int criticalSection; // gestione sezione critica
 int ppidServerInit=1; //dichiarata solo per identificare il padre
+t_credenziali cred;
+
+/*
+* Metodi usati dal server
+* invio di menù, gestore delle richieste, lettura del DB, ricerca e azione su essa.
+* utilizzo di login e verifica per il login del server.
+*/
 void sendMenu(); //manda il menu' al client
 int choiseHandler(int connectSocket, MSG choise,sem_t *sem); //gestisce la richiesta restituendo l'intero corrispondete
 MSG readContent(int connectSocket, MSG buffer); //manda i contatti presenti sul server
-MSG  search(int connectSocket, MSG buffer,operationOnList op);
-//cJSON* searchAndReturn(int connectSocket, MSG buffer);
+MSG search(int connectSocket, MSG buffer,operationOnList op); // funziona in maniera simile ad uno stream java
 MSG login(int connectSocket, MSG buffer);
 int verifica(t_credenziali cred);
 
 /*solo admin*/
-void addContact(); //aggiunge un nuovo contatto (aggiungo qui la richiesta di admin-mode?)
+void addContact(); // aggiunge un nuovo contatto
 int aggiungiPersona(int connectSocket, MSG buffer);
+int removeFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
+int editFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
 
+
+/*altri metodi generici utilizzati per la gestione di segnali e del server*/
 void customSigHandler();
 int createSettings(char const *argomenti[],int max);
 int parser(char const *argomenti[], int max);
-int removeFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
-int editFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
-MSG  printContent(cJSON * array, int connectSocket,MSG buffer);
 static cJSON * loadDatabase();
 void saveDatabase(cJSON * list);
 cJSON *creaPersona(int connectSocket, MSG buffer);
+MSG  printContent(cJSON * array, int connectSocket,MSG buffer);

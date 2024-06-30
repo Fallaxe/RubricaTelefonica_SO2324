@@ -1,8 +1,8 @@
 /*
     -> ascolto connessioni
     -> messaggio di benvenuto
-    -> la gestione delle varie connessioni è gestita da una fork()
-    -> comunicazione bidirezionale?
+    -> la gestione delle varie connessioni è gestita da fork() e dai child
+    -> 
 */
 
 #include "server.h"
@@ -513,14 +513,6 @@ MSG login(int connectSocket, MSG buffer){
 int aggiungiPersona(int connectSocket, MSG buffer){
     //return 1 aggiunto correttamente
     //return 0 problema all'aggiunta!
-        //PROBLEMA: la modifica al "data.json" NON appare prima della chiusura del server.
-        //SOLUZIONE: fflush() prima del fclose Quindi NON cancellarlo!
-        //TODO: per il momento aggiunge e basta un oggetto al file, va fatto si che lo aggiunga
-        //      all'array di item nel file, allo stato attuale sovrascrive l'intero file!
-        //      1) lettura del file al boot del server?
-        //      2) lettura del file solo su 'm'
-
-        //t_person persona;  // <- se li mettiamo direttamente sul json non serve
         
         cJSON *jsonArray = loadDatabase();
 
@@ -891,15 +883,18 @@ int parser(char const *argomenti[], int max) {
     int returnValue=0;
 
     // ricerca flag -r
-    if(strcmp(argomenti[1], resetArg) == 0){
-        printf("Rilevato flag -r per il reset delle impostazioni.\n");
-        returnValue = 1;
-    }
+    if(max > 1){
 
-    // troppi parametri:
-    if(max>2 || returnValue == 0){
-        printf("Parametri errati!\nL'utilizzo del flag -r può essere usato per il reset delle impostazioni.");
-        exit(0);
+        if(strcmp(argomenti[1], resetArg) == 0){
+            printf("Rilevato flag -r per il reset delle impostazioni.\n");
+            returnValue = 1;
+        }
+
+        // troppi parametri:
+        if(max>2 || returnValue == 0){
+            printf("Parametri errati!\nL'utilizzo del flag -r può essere usato per il reset delle impostazioni.");
+            exit(0);
+        }
     }
 
     return returnValue;
