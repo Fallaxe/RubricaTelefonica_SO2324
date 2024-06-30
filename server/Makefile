@@ -54,9 +54,10 @@ clean:
 	@rm -rf $(OUT_DIR)
 	@echo "Tutti i file *.o sono stati cancellati."
 
+# utilizzo di && per concatenare alla stessa shell il cambiamento di directory
 run:
 	@echo "eseguendo il server da makefile..."
-	@../bin/server
+	@cd ../bin && ./server
 
 deps:
 	@echo "installazione dipendenze."

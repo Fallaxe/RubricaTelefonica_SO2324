@@ -151,7 +151,7 @@ static cJSON * loadDatabase()
     cJSON *jsonArray;
 
     // apre file data in lettura
-    FILE *fp = fopen("data.json", "r"); 
+    FILE *fp = fopen(FILE_DB, "r"); 
     if (fp == NULL) {
         // se il database non esiste
         printf("Errore in lettura database: database non trovato.\n");
@@ -182,7 +182,7 @@ void saveDatabase(cJSON * jsonArray){
         utils_sortByKey(jsonArray, "surname");
         char *json_str = cJSON_Print(jsonArray);
      // write the JSON string to a file 
-        FILE * fp = fopen("data.json", "w"); 
+        FILE * fp = fopen(FILE_DB, "w"); 
         if (fp == NULL) { 
             printf("impossibile aprire il file dei dati\n"); 
             exit(42);
@@ -815,7 +815,7 @@ void main(int argc, char const *argv[])
 
 int createSettings(char const *argomenti[],int max){
 
-    FILE *fp = fopen("password.txt", "r");
+    FILE *fp = fopen(FILE_USERS, "r");
     
     t_credenziali admin;
 
