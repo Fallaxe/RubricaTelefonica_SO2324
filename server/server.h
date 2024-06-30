@@ -60,6 +60,7 @@ char *scelteLogin = "\t\tl - login admin\n";
 char *scelteadmin= "\t\ta - aggiungi contatto\n\t\tm - modifica\n\t\tr - rimuovi contatto\n";
 char *sceltaUscita = "\t\tx - esci\n\nCosa vuoi fare?\n";
 int serverSocket;
+char * resetArg = "-r";
 
 sem_t **semPtr;
 int criticalSection;
@@ -78,7 +79,8 @@ void addContact(); //aggiunge un nuovo contatto (aggiungo qui la richiesta di ad
 int aggiungiPersona(int connectSocket, MSG buffer);
 
 void customSigHandler();
-int createSettings();
+int createSettings(char const *argomenti[],int max);
+int parser(char const *argomenti[], int max);
 int removeFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
 int editFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
 MSG  printContent(cJSON * array, int connectSocket,MSG buffer);

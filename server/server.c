@@ -742,7 +742,7 @@ void main(int argc, char const *argv[])
     MSG buffer;
     buffer.isAdmin = 0;
 
-    while(createSettings() != 1){
+    while(createSettings(argv,argc) != 1){
         printf("ricominciamo dal principio!\n");
     }
 
@@ -821,17 +821,15 @@ void main(int argc, char const *argv[])
 
 }
 
-int createSettings(){
+int createSettings(char const *argomenti[],int max){
 
     FILE *fp = fopen("password.txt", "r");
     
     t_credenziali admin;
-    // char name[25];
-    // char password[25];
 
-    if (fp == NULL) {
+    if (fp == NULL || parser(argomenti,max) == 1) {
         // se il database non esiste
-        printf("impostazioni non trovate.\nCreazione del file impostazioni.\n");
+        printf("Impostazioni non trovate o richiesta di reset.\nCreazione del file impostazioni.\n");
 
         //problemi di gestione in caso di overflow
         do{
@@ -851,7 +849,6 @@ int createSettings(){
 
         char scelta;
         scanf("%c", &scelta);
-
         printf("hai scelto: %c\n",scelta);
         switch(scelta){
 
@@ -885,4 +882,25 @@ int createSettings(){
     printf("impostazioni server caricate con successo!\n");
     fclose(fp);
     return 1;
+}
+
+
+// Gestione argomenti per reset admin
+int parser(char const *argomenti[], int max) {
+
+    int returnValue=0;
+
+    // ricerca flag -r
+    if(strcmp(argomenti[1], resetArg) == 0){
+        printf("Rilevato flag -r per il reset delle impostazioni.\n");
+        returnValue = 1;
+    }
+
+    // troppi parametri:
+    if(max>2 || returnValue == 0){
+        printf("Parametri errati!\nL'utilizzo del flag -r può essere usato per il reset delle impostazioni.");
+        exit(0);
+    }
+
+    return returnValue;
 }
