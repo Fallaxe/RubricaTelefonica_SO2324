@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -36,7 +37,7 @@ char *loginArg = "-a";
 
 // funzioni
 static void login(int socket, MSG buffer);
-static int parser(char *argomenti[], int max);
+static int parser(char *argomenti[]);
 static void requestHome(int socket, MSG buffer);
 
 // gestione segnali

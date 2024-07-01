@@ -80,7 +80,7 @@ int editFromList(cJSON *found, cJSON *list, int connectSocket, MSG buffer)
         if (strcmp(utils_lowercase(buffer.message), "x") == 0)
             return 0;
         num = atoi(buffer.message);
-        printf("hai digitato: %s, num: %d\n", buffer.message, num);
+        //printf("hai digitato: %s, num: %d\n", buffer.message, num);
         strcpy(buffer.message, "");
     } while(num < 1 || num > nContacts);
 
@@ -119,8 +119,11 @@ int editFromList(cJSON *found, cJSON *list, int connectSocket, MSG buffer)
         printf("Client - User: modificato con %s\n", cJSON_Print(nuovaPersona));
         cJSON_ReplaceItemInArray(list,index,nuovaPersona);
         saveDatabase(list);
+
+        cJSON_Delete(nuovaPersona);
         return 1;
     }
+    printf("Client - User: modifica annullata.\n");
     cJSON_Delete(nuovaPersona);
     return 0;   
 }
@@ -213,8 +216,8 @@ cJSON *creaPersona(int connectSocket, MSG buffer)
         return NULL;
     } 
     else {
-        while(strlen(buffer.message) > 12) {
-            strcpy(buffer.message, "Attenzione, massimo 12 caratteri.\nInserire nome del contatto :\t");
+        while(strlen(buffer.message) < 1 || strlen(buffer.message) > 12) {
+            strcpy(buffer.message, "Attenzione, non può essere lasciato vuoto e deve essere massimo 12 caratteri.\nInserire nome del contatto :\t");
             send(connectSocket,&buffer, sizeof(buffer),0);
 
             if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
@@ -294,7 +297,7 @@ cJSON *creaPersona(int connectSocket, MSG buffer)
     } 
     else {
         while(strlen(buffer.message) > 16 || utils_strIncludeOnly(buffer.message, "+ 1234567890") == 0){
-            strcpy(buffer.message, "Attenzione, massimo 16 caratteri.\nInserire telefono del contatto :\t");
+            strcpy(buffer.message, "Attenzione, massimo 16 caratteri e caratteri consentiti: '+ 1234567890'.\nInserire telefono del contatto :\t");
             send(connectSocket,&buffer, sizeof(buffer),0);
 
             if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
@@ -366,15 +369,19 @@ MSG printContent(cJSON * array, int connectSocket,MSG buffer)
                 strcat(buffer.message, "Vuoi vedere la pagina successiva? [y/N]\n");
                 send(connectSocket,&buffer, sizeof(buffer),0);
 
-                if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0)
+                if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
                     printf("Errore nella ricezione dei dati.\n");
+                    strcpy(buffer.message, "");
+                    break;
+                }
                 else {
-                    strcpy(cred.user, buffer.message);
                     printf("Client - User: %s\n", buffer.message);
                 }
 
-                if (strcmp(utils_lowercase(buffer.message), "y") != 0)
+                if (strcmp(utils_lowercase(buffer.message), "y") != 0) {
+                    strcpy(buffer.message, "");
                     break;
+                }
                 strcpy(buffer.message, "");
             }
 
