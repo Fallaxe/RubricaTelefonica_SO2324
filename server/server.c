@@ -529,6 +529,9 @@ int aggiungiPersona(int connectSocket, MSG buffer){
             jsonArray = cJSON_CreateArray();
         }
 
+        if(cJSON_GetArraySize(jsonArray) == RECORDS_MAX)
+            return -1;
+
         cJSON* jsonItem = creaPersona(connectSocket, buffer);
         if(jsonItem != NULL)
         {
@@ -674,7 +677,18 @@ int choiseHandler(int connectSocket, MSG buffer,sem_t *sem)
             sem_post(sem);
             criticalSection = 0;
 
-            strcpy(buffer.message, (isAdded ==1 ? "Aggiunto contatto!\n" : "Contatto non aggiunto.\n"));
+            switch(isAdded)
+            {
+                case -1:
+                    strcpy(buffer.message, "Raggiunto limite contatti.\n");
+                    break;
+                case 0:
+                    strcpy(buffer.message, "Contatto non aggiunto.\n");
+                    break;
+                default:
+                    strcpy(buffer.message, "Aggiunto contatto!\n");
+                    break;
+            }
         } else
             strcpy(buffer.message, "Comando non riconosciuto.\n"); 
         break;

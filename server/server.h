@@ -36,7 +36,7 @@
 #define BUFFER_MAX 1024
 #define MAX_CLIENT 5
 #define RECORDS_INPAGE 4
-#define RECORDS_MAX 5
+#define RECORDS_MAX 100
 
 #define FILE_USERS "settings.txt"
 #define FILE_DB "data.json"
