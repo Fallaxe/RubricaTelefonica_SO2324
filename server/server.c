@@ -253,7 +253,7 @@ cJSON *creaPersona(int connectSocket, MSG buffer)
         return NULL;
      } 
     else {
-        while(atoi(buffer.message) > 100 || atoi(buffer.message) < 1){
+        while(strcmp(buffer.message, "") != 0 && (atoi(buffer.message) > 100 || atoi(buffer.message) < 1)){
             strcpy(buffer.message, "Attenzione, deve essere un numero tra 0 e 100.\nInserire eta del contatto :\t");
             send(connectSocket,&buffer, sizeof(buffer),0);
 
@@ -273,8 +273,8 @@ cJSON *creaPersona(int connectSocket, MSG buffer)
         return NULL;
     } 
     else {
-        while(strlen(buffer.message) > 30){
-            strcpy(buffer.message, "Attenzione, deve avere massimo 30 caratteri.\nInserire email del contatto :\t");
+        while(strcmp(buffer.message, "") != 0 && (strlen(buffer.message) > 30 || !utils_isValidEmail(buffer.message))){
+            strcpy(buffer.message, "Attenzione, deve avere massimo 30 caratteri ed essere un'email valida.\nInserire email del contatto :\t");
             send(connectSocket,&buffer, sizeof(buffer),0);
 
             if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
@@ -326,11 +326,10 @@ MSG printContent(cJSON * array, int connectSocket,MSG buffer)
 {
     char elementString[1024];
     int nContacts = 0;
-    int contactsInPage = 4;
     int nPage = 1;
     
     if (array == NULL || cJSON_GetArraySize(array) == 0)
-        strcat(buffer.message, "Non ci sono contatti salvati.\n\n");
+        strcat(buffer.message, "Non ci sono contatti salvati.\n");
     else
     {  
         nContacts = cJSON_GetArraySize(array);
@@ -345,13 +344,14 @@ MSG printContent(cJSON * array, int connectSocket,MSG buffer)
             //problema: se mandiamo  l'intera lista il buffer dovrebbe andare in overflow sulla recezione/invio? (non riceve tutto credo)
             //UPDATE: Per adesso invia 3 contatti per volta e chiede se si vuole cambiare pagina per continuare.
             // non funziana quando si chiede l'invio della nuova pagina!!!
+            // risolto ^
 
             // Inizio pagina
-            if(i%(contactsInPage) == 1) {
+            if(i%(RECORDS_INPAGE) == 1) {
                 strcpy(buffer.message, divisore);
                 strcat(buffer.message, cercaHeader);
                 strcat(buffer.message, divisore);
-                snprintf(elementString, sizeof(elementString), "%d contatti trovati. Pagina %d di %d.\n", nContacts, nPage, ((nContacts+(contactsInPage-1))/contactsInPage)); 
+                snprintf(elementString, sizeof(elementString), "%d contatti trovati. Pagina %d di %d.\n", nContacts, nPage, ((nContacts+(RECORDS_INPAGE-1))/RECORDS_INPAGE)); 
                 strcat(buffer.message, elementString);
             }
 
@@ -361,7 +361,7 @@ MSG printContent(cJSON * array, int connectSocket,MSG buffer)
             strcat(buffer.message, elementString);
 
             // Fine pagina
-            if (i < nContacts && i%contactsInPage == 0)
+            if (i < nContacts && i%RECORDS_INPAGE == 0)
             {
                 strcat(buffer.message, "Vuoi vedere la pagina successiva? [y/N]\n");
                 send(connectSocket,&buffer, sizeof(buffer),0);
@@ -373,9 +373,9 @@ MSG printContent(cJSON * array, int connectSocket,MSG buffer)
                     printf("Client - User: %s\n", buffer.message);
                 }
 
-                strcpy(buffer.message, "");
                 if (strcmp(utils_lowercase(buffer.message), "y") != 0)
                     break;
+                strcpy(buffer.message, "");
             }
 
             element = element->next;
@@ -538,7 +538,7 @@ int aggiungiPersona(int connectSocket, MSG buffer){
 int choiseHandler(int connectSocket, MSG buffer,sem_t *sem)
 {
     int valueSem;
-    int tornaMenu = 1;
+    int tornaMenu = 0;
 
     if (strlen(buffer.message) > 1)
     {
@@ -554,13 +554,15 @@ int choiseHandler(int connectSocket, MSG buffer,sem_t *sem)
         break;
     case 'v':
         buffer = readContent(connectSocket, buffer);
-        tornaMenu = 0;
+        // maggiore della stringa "Non ci sono contatti salvati.\n" e "Nessun contatto con questo nome.\n"
+        if (strlen(buffer.message) > 35)
+            tornaMenu = 1;
         break;
     case 's':
         buffer = search(connectSocket, buffer,NULL);
         // maggiore della stringa "Non ci sono contatti salvati.\n" e "Nessun contatto con questo nome.\n"
         if (strlen(buffer.message) > 35)
-            tornaMenu = 0;
+            tornaMenu = 1;
         break;
     case 'l':
         buffer = login(connectSocket, buffer);
@@ -676,7 +678,7 @@ int choiseHandler(int connectSocket, MSG buffer,sem_t *sem)
     }
 
     // torna direttamente al menu
-    if(tornaMenu) {
+    if(!tornaMenu) {
         sendMenu(connectSocket, buffer);
         return 1;
     }

@@ -8,12 +8,12 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/time.h>
-#include <sys/types.h>
 
 #define SERVERPORT 12345
 #define SERVERADDRESS "127.0.0.1"
 
 #define BUFFER_MAX 1024
+#define INPUT_MAX 35
 
 // messaggio che client e server si scambiano
 typedef struct MSG {

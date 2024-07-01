@@ -1,26 +1,20 @@
 #include "server_utils.h"
 
-char * utils_lowercase(char * stringa)
+char * utils_lowercase(char *str)
 {
-    for(char * ptr = stringa; *ptr; ptr++) *ptr = tolower(*ptr);
-    return stringa;
+    for(char *ptr = str; *ptr; ptr++)
+        *ptr = tolower(*ptr);
+    return str;
 }
 
-int utils_strIncludeOnly(char * str, char * digits)
+int utils_strIncludeOnly(char *str, char *restriction)
 {
-    int found;
+    char digit[2] = "\0";
     for(int i = 0; i < strlen(str); i++)
     {
-        found = 0;
-        for(int j = 0; j < strlen(digits); j++) 
-        {
-            if(str[i] == digits[j])
-            {
-                found = 1;
-                break;
-            }
-        }
-        if (found == 0) return 0;
+        digit[0] = str[i];
+        if(strstr(restriction, digit) == NULL)
+            return 0;
     }
     return 1;
 }
@@ -61,9 +55,47 @@ void inToSha256(const char *inToHash, char *destination)
     hashToHexString(mid,len,destination);
 }
 
+static int check_stdin()
+{
+    fd_set rfds;
+    struct timeval tv;
+    FD_ZERO(&rfds);
+    FD_SET(0, &rfds);
+
+    // tempo di attesa, 0 nel nostro caso
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
+
+    return select(1, &rfds, NULL, NULL, &tv);
+}
+
 void clean_stdin() {
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
+}
+
+int utils_isValidEmail(char * email)
+{
+    char *emailDigits = "abcdefghijklmnopqrstuvwxyz1234567890._-+";
+    int emlen = strlen(email);
+    
+    if(email[0] == '@' || email[0] == '.' || email[emlen-1] == '@' || email[emlen-1] == '.') return 0;
+    
+    // stringa dopo la chiocciola
+    char *afterAt = strstr(email, "@"); 
+
+    if(afterAt == NULL || strstr(afterAt, ".") == NULL || afterAt[1] == '.') return 0;
+    afterAt[0] = 'a';
+    if(!utils_strIncludeOnly(afterAt, emailDigits)) return 0;
+    afterAt[0] = '@';
+
+    // stringa prima della chiocciola
+    char *beforeAt = calloc((emlen-strlen(afterAt)), sizeof(char));
+    memcpy(beforeAt, email, (emlen-strlen(afterAt)));
+
+    if(!utils_strIncludeOnly(beforeAt, emailDigits)) return 0;
+    
+    return 1;
 }
 
 ////////////////////////////////////////// dalla libreria cJSONUtils /////////////////////////////////////////////////

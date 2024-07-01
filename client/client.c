@@ -16,8 +16,6 @@ static int check_stdin()
 {
     fd_set rfds;
     struct timeval tv;
-
-    //
     FD_ZERO(&rfds);
     FD_SET(0, &rfds);
 
@@ -29,10 +27,12 @@ static int check_stdin()
 }
 
 static void clean_stdin() {
-    char buffer[1024];
-    while (check_stdin()){
-        // legge riga per riga togliendole da stdin
-        fgets(buffer, sizeof(buffer), stdin);
+    if(check_stdin()) {
+        char buffer[1024];
+
+        while(check_stdin)
+            // se ci sono righe piene le legge una alla volta rimuovendole dallo stream
+            fgets(buffer, sizeof(buffer), stdin);
     }
 }
 
@@ -145,18 +145,19 @@ int main(int argc, char * argv[]) {
         }
 
         // Controllo e pulizia stream input
-        if(check_stdin() == 1) {
-            clean_stdin();
-        }
+        clean_stdin();
 
         // manda messaggio al server
         printf(">>\t");
-        fgets(buffer.message, BUFFER_MAX, stdin);
+        fgets(buffer.message, strlen(buffer.message), stdin);
         printf("\n");
 
-        if ((strlen(buffer.message) > 0) && (buffer.message[strlen(buffer.message) - 1] == '\n'))
-            buffer.message[strlen (buffer.message) - 1] = '\0';
-        
+        // se la stringa inviata è maggiore della dimensione permessa viene tagliata
+        if (strlen(buffer.message) > INPUT_MAX)
+            buffer.message[INPUT_MAX - 1] = '\0';
+        else
+            buffer.message[strlen(buffer.message) - 1] = '\0';
+
         send(clientSocket, &buffer, sizeof(buffer), 0);
     }
   
