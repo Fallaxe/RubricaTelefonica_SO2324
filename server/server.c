@@ -844,8 +844,7 @@ int createSettings(char const *argomenti[],int max){
         
         printf("%s : %s conferma? [y/N]", admin.user, admin.password);
 
-        char scelta;
-        scanf("%c", &scelta);
+        char scelta = getchar();
         clean_stdin();
         printf("hai scelto: %c\n",scelta);
         switch(scelta){

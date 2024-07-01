@@ -54,21 +54,6 @@ void inToSha256(const char *inToHash, char *destination)
 
     hashToHexString(mid,len,destination);
 }
-
-static int check_stdin()
-{
-    fd_set rfds;
-    struct timeval tv;
-    FD_ZERO(&rfds);
-    FD_SET(0, &rfds);
-
-    // tempo di attesa, 0 nel nostro caso
-    tv.tv_sec = 0;
-    tv.tv_usec = 0;
-
-    return select(1, &rfds, NULL, NULL, &tv);
-}
-
 void clean_stdin() {
     int c;
     while ((c = getchar()) != '\n' && c != EOF);

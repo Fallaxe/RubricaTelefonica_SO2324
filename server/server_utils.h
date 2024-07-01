@@ -12,7 +12,6 @@
 char *utils_lowercase(char * stringa);
 int utils_strIncludeOnly(char * str, char * digits);
 int utils_isValidEmail(char * email);
-static int check_stdin();
 void clean_stdin();
 
 // Aggiunta alla libreria cJSONUtils
