@@ -205,9 +205,11 @@ static MSG login(int connectSocket, MSG buffer){
     strcpy(buffer.message, "Inserire user:      ");
     send(connectSocket,&buffer, sizeof(buffer),0);
 
-    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0)
+    strcpy(buffer.message, "");
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
         printf("Errore nella ricezione dei dati.\n");
-    else {
+        exit(-1);
+    } else {
         strcpy(cred.user, buffer.message);
         printf("Client - User: %s\n", buffer.message);
     }
@@ -216,9 +218,11 @@ static MSG login(int connectSocket, MSG buffer){
     strcpy(buffer.message, "Inserire password:  ");
     send(connectSocket,&buffer, sizeof(buffer),0);
 
-    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0)
+    strcpy(buffer.message, "");
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
         printf("Errore nella ricezione dei dati.\n");
-    else {
+        exit(-1);
+    } else {
         strcpy(cred.password, buffer.message);
         printf("Client - Password: %s\n", buffer.message);
     }
@@ -647,14 +651,14 @@ static int aggiungiPersona(int connectSocket, char *clientIP, MSG buffer){
             jsonArray = cJSON_CreateArray();
         }
 
-        if(cJSON_GetArraySize(jsonArray) == RECORDS_MAX)
+        if(cJSON_GetArraySize(jsonArray) >= RECORDS_MAX)
             return -1;
 
         cJSON* jsonItem = creaPersona(connectSocket, buffer);
         if(jsonItem != NULL)
         {
             cJSON_AddItemToArray(jsonArray,jsonItem);
-            printf("Client @ %s : %d ha inserito:\n%s\n", clientIP,connectSocket,cJSON_Print(jsonItem)); //stampa solo la persona appena inserita, non tutto l'array
+            printf("Client @ %s : %d ha inserito:\n%s\n", clientIP,connectSocket,cJSON_Print(jsonItem)); //stampa solo la persona appena inserita
             saveDatabase(jsonArray);
             cJSON_Delete(jsonItem);
             return 1;
