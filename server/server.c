@@ -876,18 +876,13 @@ int createSettings(char const *argomenti[],int max){
 
         char scelta = getchar();
         clean_stdin();
-
-        //printf("hai scelto: %c\n",scelta);
+        printf("hai scelto: %c\n",scelta);
+        
         switch(scelta){
             case 'Y':
             
             case 'y':
                 FILE *fpSettings = fopen(FILE_USERS,"w");
-                // questo si può cancellare perchè non ritorna mai nullo. "w" crea il file se non c'è
-                // if (fpSettings == NULL) {
-                //     printf("Errore nell'apertura del file.\n");
-                //     return 1;
-                // }
                 printf("Impostazioni salvate con successo!\n\n");
                 char hash[CONVERTION_SHA256_MAX];
                 inToSha256(admin.password,hash);
