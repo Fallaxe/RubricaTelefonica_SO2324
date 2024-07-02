@@ -73,7 +73,7 @@ int serverSocket;
 char * resetArg = "-r"; // FLAG di utilizzo del reset user e password dell'admin
 
 sem_t **semPtr; // utilizzo di un puntatore per la gestione delle interruzioni sulle mutue esclusioni
-int criticalSection; // gestione sezione critica
+int inCriticalSection; // pid processo in sezione critica
 int ppidServerInit=1; //dichiarata solo per identificare il padre
 t_credenziali cred;
 
@@ -82,25 +82,25 @@ t_credenziali cred;
 * invio di menù, gestore delle richieste, lettura del DB, ricerca e azione su essa.
 * utilizzo di login e verifica per il login del server.
 */
-void sendMenu(); //manda il menu' al client
-int choiseHandler(int connectSocket, MSG choise,sem_t *sem); //gestisce la richiesta restituendo l'intero corrispondete
-MSG readContent(int connectSocket, MSG buffer); //manda i contatti presenti sul server
-MSG search(int connectSocket, MSG buffer,operationOnList op); // funziona in maniera simile ad uno stream java
-MSG login(int connectSocket, MSG buffer);
-int verifica(t_credenziali cred);
+static void sendMenu(); //manda il menu' al client
+static int choiseHandler(int connectSocket, char*clientIP, MSG choise,sem_t *sem); //gestisce la richiesta restituendo l'intero corrispondete
+static MSG readContent(int connectSocket, char *clientIP, MSG buffer); //manda i contatti presenti sul server
+static MSG search(int connectSocket, char * clientIP, MSG buffer,operationOnList op); // funziona in maniera simile ad uno stream java
+static MSG login(int connectSocket, MSG buffer);
+static int verifica(t_credenziali cred);
 
 /*solo admin*/
-void addContact(); // aggiunge un nuovo contatto
-int aggiungiPersona(int connectSocket, MSG buffer);
-int removeFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
-int editFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
+static void addContact(); // aggiunge un nuovo contatto
+static int aggiungiPersona(int connectSocket, char *clientIP, MSG buffer);
+static int removeFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
+static int editFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer);
 
 
 /*altri metodi generici utilizzati per la gestione di segnali e del server*/
-void customSigHandler();
-int createSettings(char const *argomenti[],int max);
-int parser(char const *argomenti[], int max);
+static void customSigHandler();
+static int createSettings(char const *argomenti[],int max);
+static int parser(char const *argomenti[], int max);
 static cJSON * loadDatabase();
-void saveDatabase(cJSON * list);
-cJSON *creaPersona(int connectSocket, MSG buffer);
-MSG  printContent(cJSON * array, int connectSocket,MSG buffer);
+static void saveDatabase(cJSON * list);
+static cJSON *creaPersona(int connectSocket, MSG buffer);
+static MSG  printContent(cJSON * array, int connectSocket,char *clientIP,MSG buffer);

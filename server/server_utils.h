@@ -18,5 +18,4 @@ void clean_stdin();
 CJSON_PUBLIC(void) utils_sortByKey(cJSON * object, char * key);
 
 //  hash utilites (sha256)
-void hashToHexString(const unsigned char *hash, int length, char *output);
 void inToSha256(const char *inToHash, char *destination);

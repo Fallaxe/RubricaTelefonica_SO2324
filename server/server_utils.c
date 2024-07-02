@@ -10,16 +10,17 @@ char * utils_lowercase(char *str)
 int utils_strIncludeOnly(char *str, char *restriction)
 {
     char digit[2] = "\0";
-    for(int i = 0; i < strlen(str); i++)
+
+    for(char *ptr = str; *ptr; ptr++)
     {
-        digit[0] = str[i];
+        digit[0] = ptr[0];
         if(strstr(restriction, digit) == NULL)
             return 0;
     }
     return 1;
 }
 
-void hashToHexString(const unsigned char *hash, int length, char *output) {
+static void hashToHexString(const unsigned char *hash, int length, char *output) {
     const char *hexChars = "0123456789abcdef";
     for (int i = 0; i < length; i++) {
         output[i * 2] = hexChars[(hash[i] >> 4) & 0xF];
@@ -70,13 +71,12 @@ int utils_isValidEmail(char * email)
     char *afterAt = strstr(email, "@"); 
 
     if(afterAt == NULL || strstr(afterAt, ".") == NULL || afterAt[1] == '.') return 0;
-    afterAt[0] = 'a';
+    afterAt ++;
     if(!utils_strIncludeOnly(afterAt, emailDigits)) return 0;
-    afterAt[0] = '@';
 
     // stringa prima della chiocciola
-    char *beforeAt = calloc((emlen-strlen(afterAt)), sizeof(char));
-    memcpy(beforeAt, email, (emlen-strlen(afterAt)));
+    char *beforeAt = calloc((emlen-strlen(afterAt)-1), sizeof(char));
+    memcpy(beforeAt, email, (emlen-strlen(afterAt)-1));
 
     if(!utils_strIncludeOnly(beforeAt, emailDigits)) return 0;
     

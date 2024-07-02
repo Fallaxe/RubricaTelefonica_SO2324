@@ -36,14 +36,14 @@ char *loginChar = "l";
 char *loginArg = "-a";
 
 // funzioni
-static void login(int socket, MSG buffer);
-static int parser(char *argomenti[]);
-static void requestHome(int socket, MSG buffer);
+// static void login(int socket, MSG buffer);
+// static int parser(char *argomenti[]);
+// static void requestHome(int socket, MSG buffer);
 
-// gestione segnali
-static void customSigHandler(); // interruzione: ctrl+C
-static void sigpipe_handler(int signo); // server chiude la connessione
+// // gestione segnali
+// static void customSigHandler(); // interruzione: ctrl+C
+// static void sigpipe_handler(int signo); // server chiude la connessione
 
-// pulizia stdin
-static int check_stdin();
-static void clean_stdin();
+// // pulizia stdin
+// static int check_stdin();
+// static void clean_stdin();
