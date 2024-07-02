@@ -7,146 +7,111 @@
 
 #include "server.h"
 
-int removeFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer)
-{
-    int num = -1;
-    int nContacts = cJSON_GetArraySize(found);
-
-    do
-    {
-        strcat(buffer.message,"Inserisci l'indice del contatto da eliminare. x per tornare al menù\n");
-        send(connectSocket,&buffer, sizeof(buffer), 0);
-
-        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0){
-            printf("Errore nella ricezione dei dati.\n");
-            return 0;
-        }
-        
-        if (strcmp(utils_lowercase(buffer.message), "x") == 0)
-            return 0;
-        num = atoi(buffer.message);
-        strcpy(buffer.message, "");
-    } while(num < 1 || num > nContacts);
-
-    // trova elemento corrispondente nell'elenco contatti
-    int index = 0;
-    cJSON * elementDeleted = cJSON_GetArrayItem(found, (num-1));
-    cJSON * element = list->child;
-    while(element){
-        if(strcmp(cJSON_Print(elementDeleted), cJSON_Print(element)) == 0)
-                break;
-        index ++;
-        element= element->next;
+// gestione segnali
+static void customSigHandler(){
+    close(serverSocket);
+    if(ppidServerInit == getpid()){
+        printf("\nProcesso padre(%d) terminato\n",ppidServerInit);
+        exit(0);
     }
     
-    char elementStr[1024];
-    snprintf(elementStr, sizeof(elementStr), "Contatto:\n\tNome: %s\n\tCognome: %s\n\tEtà: %d\n\tEmail: %s\n\tTelefono: %s\nATTENZIONE. Vuoi confermare la rimozione? [y/N]\n",
-                                            cJSON_GetObjectItem(element,"name")->valuestring, cJSON_GetObjectItem(element,"surname")->valuestring,
-                                            cJSON_GetObjectItem(element,"age")->valueint, cJSON_GetObjectItem(element,"email")->valuestring,
-                                            cJSON_GetObjectItem(element,"phone")->valuestring); 
-    strcpy(buffer.message, elementStr);
-    send(connectSocket,&buffer, sizeof(buffer), 0);
+    printf("\nprocesso figlio con pid %d terminato\n",getpid());
+    exit(1);
+}
 
-    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
-        printf("Errore nella ricezione dei dati.\n");
-        return 0;
+static void customSigPipeHandler(int signo){  
+    printf("\nClient con pid %d disconnesso.\n",getpid());
+    
+    // se il processo era il sezione critica
+    if(inCriticalSection == getpid()) {
+        sem_post(*semPtr);
     }
-    if(strcmp(utils_lowercase(buffer.message), "y") != 0)
-        return 0;
+    exit(0);
+}
 
-    printf("Client - User: eliminazione di %s\n", cJSON_Print(element));
+// Gestione argomenti per reset admin
+static int parser(char const *argomenti[], int max) {
+
+    int returnValue=0;
+
+    // ricerca flag -r
+    if(max > 1){
+
+        if(strcmp(argomenti[1], resetArg) == 0){
+            printf("Rilevato flag -r per il reset delle impostazioni.\n");
+            returnValue = 1;
+        }
+
+        // troppi parametri:
+        if(max>2 || returnValue == 0){
+            printf("Parametri errati!\nL'utilizzo del flag -r può essere usato per il reset delle impostazioni.");
+            exit(0);
+        }
+    }
+
+    return returnValue;
+}
+
+static int createSettings(char const *argomenti[],int max){
+
+    FILE *fp = fopen(FILE_USERS, "r");
+    
+    t_credenziali admin;
+
+    if (fp == NULL || parser(argomenti,max) == 1) {
+        if(fp == NULL)
+            printf("Impostazioni non trovate\nCreazione del file impostazioni.\n");
+        else {
+            fclose(fp);
+            printf("Ricevuta richiesta di reset del file impostazioni.\n");
+        }
+
+        //Richiesta nome/password e gestione in caso di overflow
+        do{
+        printf("nome admin: ");
+            scanf("%24s",admin.user);
+        }while(strlen(admin.user)>24);
+        clean_stdin();
         
-    //cancella dall'array all'indirizzo selezionato
-    cJSON_DeleteItemFromArray(list,index);
-    saveDatabase(list);
+        do{   
+            printf("password (!)max 24 caratteri, sarà applicato uno sha(!):");
+            scanf("%24s",admin.password);
+        }while(strlen(admin.password) > 24);
+        clean_stdin();
+        
+        printf("%s : %s conferma? [y/N]", admin.user, admin.password);
+
+        char scelta = getchar();
+        clean_stdin();
+        printf("hai scelto: %c\n",scelta);
+        
+        switch(scelta){
+            case 'Y':
+            
+            case 'y':
+                FILE *fpSettings = fopen(FILE_USERS,"w");
+                if (fpSettings == NULL) {
+                    printf("Errore nell'apertura del file.\n");
+                    return 1;
+                }
+                printf("Impostazioni salvate con successo!\n\n");
+                char hash[CONVERTION_SHA256_MAX];
+                inToSha256(admin.password,hash);
+                fprintf(fpSettings,"%s %s",admin.user, hash);
+
+                fflush(fpSettings);
+                fclose(fpSettings);
+                return 1;
+
+            default:
+                printf("Impostazioni non salvate.\n");
+                return 0;
+        }
+    }
+    fscanf(fp,"%s %s",cred.user,cred.password);
+    printf("Impostazioni server caricate con successo!\n");
+    fclose(fp);
     return 1;
-}
-
-int editFromList(cJSON *found, cJSON *list, int connectSocket, MSG buffer)
-{
-    int num = -1;
-    int nContacts = cJSON_GetArraySize(found);
-
-    do
-    {
-        strcat(buffer.message,"Inserisci l'indice del contatto da modificare. x per tornare al menù\n");
-        send(connectSocket,&buffer, sizeof(buffer), 0);
-
-        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0){
-            printf("Errore nella ricezione dei dati.\n");
-            return 0;
-        }
-        
-        if (strcmp(utils_lowercase(buffer.message), "x") == 0)
-            return 0;
-        num = atoi(buffer.message);
-        //printf("hai digitato: %s, num: %d\n", buffer.message, num);
-        strcpy(buffer.message, "");
-    } while(num < 1 || num > nContacts);
-
-    // trova elemento corrispondente nell'elenco contatti
-    int index = 0;
-    cJSON * elementDeleted = cJSON_GetArrayItem(found, (num-1));
-    cJSON * element = list->child;
-    while(element){
-        if(strcmp(cJSON_Print(elementDeleted), cJSON_Print(element)) == 0)
-                break;
-        index ++;
-        element= element->next;
-    }
-
-    char elementStr[1024];
-    snprintf(elementStr, sizeof(elementStr), "Contatto:\n\tNome: %s\n\tCognome: %s\n\tEtà: %d\n\tEmail: %s\n\tTelefono: %s\nATTENZIONE. Vuoi modificarlo? [y/N]\n",
-                                            cJSON_GetObjectItem(element,"name")->valuestring, cJSON_GetObjectItem(element,"surname")->valuestring,
-                                            cJSON_GetObjectItem(element,"age")->valueint, cJSON_GetObjectItem(element,"email")->valuestring,
-                                            cJSON_GetObjectItem(element,"phone")->valuestring); 
-    strcpy(buffer.message, elementStr);
-    send(connectSocket,&buffer, sizeof(buffer), 0);
-
-    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
-        printf("Errore nella ricezione dei dati.\n");
-        return 0;
-    }
-    if(strcmp(utils_lowercase(buffer.message), "y") != 0)
-        return 0;
-
-    //edit
-    printf("Client - User: modifica di %s\n", cJSON_Print(element));
-    cJSON* nuovaPersona = creaPersona(connectSocket, buffer);
-
-    if(nuovaPersona != NULL)
-    {
-        printf("Client - User: modificato con %s\n", cJSON_Print(nuovaPersona));
-        cJSON_ReplaceItemInArray(list,index,nuovaPersona);
-        saveDatabase(list);
-
-        cJSON_Delete(nuovaPersona);
-        return 1;
-    }
-    printf("Client - User: modifica annullata.\n");
-    cJSON_Delete(nuovaPersona);
-    return 0;   
-}
-
-void sendMenu(int connectSocket, MSG buffer)
-{
-    strcat(buffer.message, divisore);
-    strcat(buffer.message, menuHeader);
-    strcat(buffer.message, divisore);
-    strcat(buffer.message, "\n");
-    
-    strcat(buffer.message, scelte);
-    
-    // menu da admin
-    if (buffer.isAdmin == 1)
-        strcat(buffer.message, scelteadmin);
-    else
-        strcat(buffer.message, scelteLogin);
-    
-    // scelta per uscire
-    strcat(buffer.message, sceltaUscita);
-
-    send(connectSocket,&buffer, sizeof(buffer), 0);
 }
 
 static cJSON * loadDatabase()
@@ -180,7 +145,7 @@ static cJSON * loadDatabase()
     return jsonArray;
 }
 
-void saveDatabase(cJSON * jsonArray){
+static void saveDatabase(cJSON * jsonArray){
     // sort dell'array per cognome
         utils_sortByKey(jsonArray, "surname");
     // creazione di una stringa in formato json con tutti gli oggetti
@@ -200,7 +165,95 @@ void saveDatabase(cJSON * jsonArray){
         cJSON_free(json_str);
 }
 
-cJSON *creaPersona(int connectSocket, MSG buffer)
+static int verifica(t_credenziali cred)
+{
+    FILE * fptr;
+    t_credenziali admin;
+    int login = 0;
+
+    fptr = fopen(FILE_USERS, "r");
+    if (fptr == NULL) {
+        printf("Errore file password non trovato.");
+        return 0;
+    } else {
+        char hashPSWadmin[CONVERTION_SHA256_MAX];
+        while(fscanf(fptr,"%s %s\n", admin.user, hashPSWadmin) != -1) {
+
+            char hashPSWinserita[CONVERTION_SHA256_MAX];
+            inToSha256(cred.password,hashPSWinserita);
+
+            if ((strcmp(cred.user, admin.user) == 0) && (strcmp(hashPSWadmin, hashPSWinserita) == 0)) {
+                login = 1;
+                printf("Login effettuato.\n");                     
+                break;                         
+            }
+        }
+    }
+    if (login == 0) printf("Login non effettuato.\n");
+    fclose(fptr);
+    return login;
+}
+
+static MSG login(int connectSocket, MSG buffer){
+    if(buffer.isAdmin == 1) {
+        strcpy(buffer.message, "Sei già loggato.\n");
+        return buffer;
+    }
+    t_credenziali cred;
+        
+    // Richiede User
+    strcpy(buffer.message, "Inserire user:      ");
+    send(connectSocket,&buffer, sizeof(buffer),0);
+
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0)
+        printf("Errore nella ricezione dei dati.\n");
+    else {
+        strcpy(cred.user, buffer.message);
+        printf("Client - User: %s\n", buffer.message);
+    }
+
+    // Richiede Password
+    strcpy(buffer.message, "Inserire password:  ");
+    send(connectSocket,&buffer, sizeof(buffer),0);
+
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0)
+        printf("Errore nella ricezione dei dati.\n");
+    else {
+        strcpy(cred.password, buffer.message);
+        printf("Client - Password: %s\n", buffer.message);
+    }
+
+    if (verifica(cred)) {
+        buffer.isAdmin = 1;
+        strcpy(buffer.message, "Login effettuato con successo.\n\n");
+    } else
+        strcpy(buffer.message, "Attenzione username o password errati.\n\n");
+
+    return buffer;
+}
+
+static void sendMenu(int connectSocket, MSG buffer)
+{
+    strcat(buffer.message, divisore);
+    strcat(buffer.message, menuHeader);
+    strcat(buffer.message, divisore);
+    strcat(buffer.message, "\n");
+    
+    strcat(buffer.message, scelte);
+    
+    // menu da admin
+    if (buffer.isAdmin == 1)
+        strcat(buffer.message, scelteadmin);
+    else
+        strcat(buffer.message, scelteLogin);
+    
+    // scelta per uscire
+    strcat(buffer.message, sceltaUscita);
+
+    send(connectSocket,&buffer, sizeof(buffer), 0);
+}
+
+static cJSON *creaPersona(int connectSocket, MSG buffer)
 {
     cJSON *jsonItem = cJSON_CreateObject();
     
@@ -341,7 +394,7 @@ cJSON *creaPersona(int connectSocket, MSG buffer)
     return jsonItem;
 }
 
-MSG printContent(cJSON * array, int connectSocket, char*clientIP,MSG buffer)
+static MSG printContent(cJSON * array, int connectSocket, char*clientIP,MSG buffer)
 {
     char elementString[1024];
     int nContacts = 0;
@@ -403,14 +456,135 @@ MSG printContent(cJSON * array, int connectSocket, char*clientIP,MSG buffer)
     return buffer;
 }
 
-MSG readContent(int connectSocket, char*clientIP,MSG buffer)
+static int removeFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer)
+{
+    int num = -1;
+    int nContacts = cJSON_GetArraySize(found);
+
+    do
+    {
+        strcat(buffer.message,"Inserisci l'indice del contatto da eliminare. x per tornare al menù\n");
+        send(connectSocket,&buffer, sizeof(buffer), 0);
+
+        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0){
+            printf("Errore nella ricezione dei dati.\n");
+            return 0;
+        }
+        
+        if (strcmp(utils_lowercase(buffer.message), "x") == 0)
+            return 0;
+        num = atoi(buffer.message);
+        strcpy(buffer.message, "");
+    } while(num < 1 || num > nContacts);
+
+    // trova elemento corrispondente nell'elenco contatti
+    int index = 0;
+    cJSON * elementDeleted = cJSON_GetArrayItem(found, (num-1));
+    cJSON * element = list->child;
+    while(element){
+        if(strcmp(cJSON_Print(elementDeleted), cJSON_Print(element)) == 0)
+                break;
+        index ++;
+        element= element->next;
+    }
+    
+    char elementStr[1024];
+    snprintf(elementStr, sizeof(elementStr), "Contatto:\n\tNome: %s\n\tCognome: %s\n\tEtà: %d\n\tEmail: %s\n\tTelefono: %s\nATTENZIONE. Vuoi confermare la rimozione? [y/N]\n",
+                                            cJSON_GetObjectItem(element,"name")->valuestring, cJSON_GetObjectItem(element,"surname")->valuestring,
+                                            cJSON_GetObjectItem(element,"age")->valueint, cJSON_GetObjectItem(element,"email")->valuestring,
+                                            cJSON_GetObjectItem(element,"phone")->valuestring); 
+    strcpy(buffer.message, elementStr);
+    send(connectSocket,&buffer, sizeof(buffer), 0);
+
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+        printf("Errore nella ricezione dei dati.\n");
+        return 0;
+    }
+    if(strcmp(utils_lowercase(buffer.message), "y") != 0)
+        return 0;
+
+    printf("Client - User: eliminazione di %s\n", cJSON_Print(element));
+        
+    //cancella dall'array all'indirizzo selezionato
+    cJSON_DeleteItemFromArray(list,index);
+    saveDatabase(list);
+    return 1;
+}
+
+static int editFromList(cJSON *found, cJSON *list, int connectSocket, MSG buffer)
+{
+    int num = -1;
+    int nContacts = cJSON_GetArraySize(found);
+
+    do
+    {
+        strcat(buffer.message,"Inserisci l'indice del contatto da modificare. x per tornare al menù\n");
+        send(connectSocket,&buffer, sizeof(buffer), 0);
+
+        if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0){
+            printf("Errore nella ricezione dei dati.\n");
+            return 0;
+        }
+        
+        if (strcmp(utils_lowercase(buffer.message), "x") == 0)
+            return 0;
+        num = atoi(buffer.message);
+        //printf("hai digitato: %s, num: %d\n", buffer.message, num);
+        strcpy(buffer.message, "");
+    } while(num < 1 || num > nContacts);
+
+    // trova elemento corrispondente nell'elenco contatti
+    int index = 0;
+    cJSON * elementDeleted = cJSON_GetArrayItem(found, (num-1));
+    cJSON * element = list->child;
+    while(element){
+        if(strcmp(cJSON_Print(elementDeleted), cJSON_Print(element)) == 0)
+                break;
+        index ++;
+        element= element->next;
+    }
+
+    char elementStr[1024];
+    snprintf(elementStr, sizeof(elementStr), "Contatto:\n\tNome: %s\n\tCognome: %s\n\tEtà: %d\n\tEmail: %s\n\tTelefono: %s\nATTENZIONE. Vuoi modificarlo? [y/N]\n",
+                                            cJSON_GetObjectItem(element,"name")->valuestring, cJSON_GetObjectItem(element,"surname")->valuestring,
+                                            cJSON_GetObjectItem(element,"age")->valueint, cJSON_GetObjectItem(element,"email")->valuestring,
+                                            cJSON_GetObjectItem(element,"phone")->valuestring); 
+    strcpy(buffer.message, elementStr);
+    send(connectSocket,&buffer, sizeof(buffer), 0);
+
+    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0) {
+        printf("Errore nella ricezione dei dati.\n");
+        return 0;
+    }
+    if(strcmp(utils_lowercase(buffer.message), "y") != 0)
+        return 0;
+
+    //edit
+    printf("Client - User: modifica di %s\n", cJSON_Print(element));
+    cJSON* nuovaPersona = creaPersona(connectSocket, buffer);
+
+    if(nuovaPersona != NULL)
+    {
+        printf("Client - User: modificato con %s\n", cJSON_Print(nuovaPersona));
+        cJSON_ReplaceItemInArray(list,index,nuovaPersona);
+        saveDatabase(list);
+
+        cJSON_Delete(nuovaPersona);
+        return 1;
+    }
+    printf("Client - User: modifica annullata.\n");
+    cJSON_Delete(nuovaPersona);
+    return 0;   
+}
+
+static MSG readContent(int connectSocket, char*clientIP,MSG buffer)
 {
     cJSON *jsonArray = loadDatabase();
     strcpy(buffer.message, "");
     return printContent(jsonArray,connectSocket,clientIP,buffer);
 }
 
-MSG search(int connectSocket, char*clientIP,MSG buffer, operationOnList op)
+static MSG search(int connectSocket, char*clientIP,MSG buffer, operationOnList op)
 {   
     cJSON *jsonArray = loadDatabase();
     cJSON *foundArr = cJSON_CreateArray();
@@ -465,74 +639,7 @@ MSG search(int connectSocket, char*clientIP,MSG buffer, operationOnList op)
     return buffer;
 }
 
-int verifica(t_credenziali cred)
-{
-    FILE * fptr;
-    t_credenziali admin;
-    int login = 0;
-
-    fptr = fopen(FILE_USERS, "r");
-    if (fptr == NULL) {
-        printf("Errore file password non trovato.");
-        return 0;
-    } else {
-        char hashPSWadmin[CONVERTION_SHA256_MAX];
-        while(fscanf(fptr,"%s %s\n", admin.user, hashPSWadmin) != -1) {
-
-            char hashPSWinserita[CONVERTION_SHA256_MAX];
-            inToSha256(cred.password,hashPSWinserita);
-
-            if ((strcmp(cred.user, admin.user) == 0) && (strcmp(hashPSWadmin, hashPSWinserita) == 0)) {
-                login = 1;
-                printf("Login effettuato.\n");                     
-                break;                         
-            }
-        }
-    }
-    if (login == 0) printf("Login non effettuato.\n");
-    fclose(fptr);
-    return login;
-}
-
-MSG login(int connectSocket, MSG buffer){
-    if(buffer.isAdmin == 1) {
-        strcpy(buffer.message, "Sei già loggato.\n");
-        return buffer;
-    }
-    t_credenziali cred;
-        
-    // Richiede User
-    strcpy(buffer.message, "Inserire user:      ");
-    send(connectSocket,&buffer, sizeof(buffer),0);
-
-    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0)
-        printf("Errore nella ricezione dei dati.\n");
-    else {
-        strcpy(cred.user, buffer.message);
-        printf("Client - User: %s\n", buffer.message);
-    }
-
-    // Richiede Password
-    strcpy(buffer.message, "Inserire password:  ");
-    send(connectSocket,&buffer, sizeof(buffer),0);
-
-    if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0)
-        printf("Errore nella ricezione dei dati.\n");
-    else {
-        strcpy(cred.password, buffer.message);
-        printf("Client - Password: %s\n", buffer.message);
-    }
-
-    if (verifica(cred)) {
-        buffer.isAdmin = 1;
-        strcpy(buffer.message, "Login effettuato con successo.\n\n");
-    } else
-        strcpy(buffer.message, "Attenzione username o password errati.\n\n");
-
-    return buffer;
-}
-
-int aggiungiPersona(int connectSocket, char *clientIP, MSG buffer){        
+static int aggiungiPersona(int connectSocket, char *clientIP, MSG buffer){        
         cJSON *jsonArray = loadDatabase();
 
         if (jsonArray == NULL) {
@@ -739,27 +846,6 @@ static int choiseHandler(int connectSocket, char*clientIP, MSG buffer,sem_t *sem
     return 1;
 }
 
-void customSigHandler(){
-    close(serverSocket);
-    if(ppidServerInit == getpid()){
-        printf("\nProcesso padre(%d) terminato\n",ppidServerInit);
-        exit(0);
-    }
-    
-    printf("\nprocesso figlio con pid %d terminato\n",getpid());
-    exit(1);
-}
-
-void customSigPipeHandler(int signo){  
-    printf("\nClient con pid %d disconnesso.\n",getpid());
-    
-    // se il processo era il sezione critica
-    if(inCriticalSection == getpid()) {
-        sem_post(*semPtr);
-    }
-    exit(0);
-}
-
 void main(int argc, char const *argv[])
 {
     void (*handler) (int);
@@ -858,90 +944,4 @@ void main(int argc, char const *argv[])
         else 
             close(connectSocket);
     }
-}
-
-int createSettings(char const *argomenti[],int max){
-
-    FILE *fp = fopen(FILE_USERS, "r");
-    
-    t_credenziali admin;
-
-    if (fp == NULL || parser(argomenti,max) == 1) {
-        if(fp == NULL)
-            printf("Impostazioni non trovate\nCreazione del file impostazioni.\n");
-        else {
-            fclose(fp);
-            printf("Ricevuta richiesta di reset del file impostazioni.\n");
-        }
-
-        //Richiesta nome/password e gestione in caso di overflow
-        do{
-        printf("nome admin: ");
-            scanf("%24s",admin.user);
-        }while(strlen(admin.user)>24);
-        clean_stdin();
-        
-        do{   
-            printf("password (!)max 24 caratteri, sarà applicato uno sha(!):");
-            scanf("%24s",admin.password);
-        }while(strlen(admin.password) > 24);
-        clean_stdin();
-        
-        printf("%s : %s conferma? [y/N]", admin.user, admin.password);
-
-        char scelta = getchar();
-        clean_stdin();
-        printf("hai scelto: %c\n",scelta);
-        
-        switch(scelta){
-            case 'Y':
-            
-            case 'y':
-                FILE *fpSettings = fopen(FILE_USERS,"w");
-                if (fpSettings == NULL) {
-                    printf("Errore nell'apertura del file.\n");
-                    return 1;
-                }
-                printf("Impostazioni salvate con successo!\n\n");
-                char hash[CONVERTION_SHA256_MAX];
-                inToSha256(admin.password,hash);
-                fprintf(fpSettings,"%s %s",admin.user, hash);
-
-                fflush(fpSettings);
-                fclose(fpSettings);
-                return 1;
-
-            default:
-                printf("Impostazioni non salvate.\n");
-                return 0;
-        }
-    }
-    fscanf(fp,"%s %s",cred.user,cred.password);
-    printf("Impostazioni server caricate con successo!\n");
-    fclose(fp);
-    return 1;
-}
-
-
-// Gestione argomenti per reset admin
-int parser(char const *argomenti[], int max) {
-
-    int returnValue=0;
-
-    // ricerca flag -r
-    if(max > 1){
-
-        if(strcmp(argomenti[1], resetArg) == 0){
-            printf("Rilevato flag -r per il reset delle impostazioni.\n");
-            returnValue = 1;
-        }
-
-        // troppi parametri:
-        if(max>2 || returnValue == 0){
-            printf("Parametri errati!\nL'utilizzo del flag -r può essere usato per il reset delle impostazioni.");
-            exit(0);
-        }
-    }
-
-    return returnValue;
 }
