@@ -21,8 +21,17 @@ int utils_strIncludeOnly(char *str, char *restriction)
 }
 
 static void hashToHexString(const unsigned char *hash, int length, char *output) {
-    const char *hexChars = "0123456789abcdef";
+    const char *hexChars = "0123456789abcdef"; //caratteri esadecimali
     for (int i = 0; i < length; i++) {
+        /*spostamento di 4 bit del byte corrente
+        * si ottiene gli ultimi 4 bit tramite l'and logico con 0xF 
+        * ottenendo così un valore esadecimale
+        * stessa cosa si fa col successivo elemento isolando gli altri 4 bit del byte corrispondente
+        * 
+        * L'effetto che si ha è un vero e proprio troncamento del byte in 2 valori esadecimali da 4
+        * infatti 1 byte = 8 bit
+        * come maschera usiamo 0xF = 1111 
+        */ 
         output[i * 2] = hexChars[(hash[i] >> 4) & 0xF];
         output[i * 2 + 1] = hexChars[hash[i] & 0xF];
     }
