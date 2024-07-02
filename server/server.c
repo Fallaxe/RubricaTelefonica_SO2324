@@ -755,73 +755,81 @@ void main(int argc, char const *argv[])
     struct sockaddr_in serverAddress, clientAddress;
     char *clientIP;
 
+    // messaggio bidirezionale condiviso
     MSG buffer;
     buffer.isAdmin = 0;
 
+    // Creazione setting
+    while(createSettings(argv,argc) != 1){
+        printf("Setting:\n");
+    }
 
+    // creazione del socket
     if((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("errore nella creazione del socket!");
-        exit(serverSocket);
+        perror("Errore nella creazione del socket.\n");
+        exit(-1);
     }
     
-    //modo per evitare l'errore "errore nel binding: Address already in use" (SO_REUSEADDR)
-    if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
-        perror("setsockopt(SO_REUSEADDR) failed");
-
+    // settare comportamento del socket (SO_REUSEADDR)
+    if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0) {
+        perror("Errore in setsockopt(SO_REUSEADDR).\n");
+        exit(-1);
+    }
     
+    // gestione dei segnali
     signal(SIGPIPE, customSigPipeHandler);
     signal(SIGINT,customSigHandler);
 
-    serverAddress.sin_family = AF_INET;         // IPv4
-    serverAddress.sin_port = htons(SERVERPORT); // su quale porta apriamo
-    serverAddress.sin_addr.s_addr = inet_addr(SERVERADDRESS);// indirizzo server
+    serverAddress.sin_family = AF_INET;                       // IPv4
+    serverAddress.sin_port = htons(SERVERPORT);               // porta
+    serverAddress.sin_addr.s_addr = inet_addr(SERVERADDRESS); // indirizzo server
 
     // bind del socket
     if((returnCode = bind(serverSocket,(struct sockaddr*) &serverAddress, sizeof(serverAddress)))< 0){
-        perror("errore nel binding");
-        exit(42);
-    }
-
-    while(createSettings(argv,argc) != 1){
-        printf("ricominciamo dal principio!\n");
+        perror("Errore nel binding del socket.\n");
+        exit(-1);
     }
 
     // listen
     if((returnCode = listen(serverSocket,MAX_CLIENT)) < 0){
-        perror("errore nel listening");
+        perror("Errore nella listen sul socket.\n");
         exit(-1);
     }
 
-    printf("server online CTRL+C per terminare\n");
+    printf("Server online CTRL+C per terminare\n");
 
     clientAddressLen = sizeof(clientAddress);
 
-    while (1)
+    while(1)
     {
         if((connectSocket = accept(serverSocket, (struct sockaddr *)&clientAddress, &clientAddressLen))<0){
-            perror("errore in accept");
+            perror("Errore in accept.\n");
             close(serverSocket);
             exit(-1);
         }
+        // crea un processo figlio con fork()
         if(fork() == 0){
             clientIP = inet_ntoa(clientAddress.sin_addr);
-            printf("client connected! @ %s : %d PID: %d PPID: %d\n",clientIP, connectSocket,getpid(),getppid());
+            printf("Client connesso! @ %s : %d PID: %d PPID: %d\n",clientIP, connectSocket,getpid(),getppid());
 
             while(1) {
-
                 // attende richiesta dal client                
                 if((returnCode = recv(connectSocket, &buffer, sizeof(buffer), 0)) < 0) {
                     printf("Errore nella ricezione dei dati.\n");
+                    close(connectSocket);
+                    exit(-1);
                 } else {
-                    printf("Client - isAdmin: %d, Message %s\n", buffer.isAdmin, buffer.message);
+                    printf("Client @ %s - isAdmin: %d, Message %s\n",clientIP, buffer.isAdmin, buffer.message);
 
-                    if(strcmp(buffer.message, "x") == 0) {
+                    if(strcmp(buffer.message, "x") == 0)
+                    {
                     send(connectSocket, &buffer, sizeof(buffer), 0);
                     close(connectSocket);
                     printf("Client @ %s disconnesso.\n", clientIP);
                     // chiude il processo figlio
-                    exit(1);
-                }                    
+                    exit(0);
+                    }                    
+
                     // gestione delle richieste                
                     choiseHandler(connectSocket, buffer,sem);
                 }
@@ -833,10 +841,8 @@ void main(int argc, char const *argv[])
 
         }   
         else 
-            close(connectSocket); 
+            close(connectSocket);
     }
-    
-
 }
 
 int createSettings(char const *argomenti[],int max){
@@ -846,17 +852,20 @@ int createSettings(char const *argomenti[],int max){
     t_credenziali admin;
 
     if (fp == NULL || parser(argomenti,max) == 1) {
-        // se il database non esiste
-        printf("Impostazioni non trovate o richiesta di reset.\nCreazione del file impostazioni.\n");
+        if(fp == NULL)
+            printf("Impostazioni non trovate\nCreazione del file impostazioni.\n");
+        else {
+            fclose(fp);
+            printf("Ricevuta richiesta di reset del file impostazioni.\n");
+        }
 
-        //problemi di gestione in caso di overflow
+        //Richiesta nome/password e gestione in caso di overflow
         do{
         printf("nome admin: ");
             scanf("%24s",admin.user);
         }while(strlen(admin.user)>24);
         clean_stdin();
         
-        //per ora non fa lo sha --> openssl manca/libreria
         do{   
             printf("password (!)max 24 caratteri, sarà applicato uno sha(!):");
             scanf("%24s",admin.password);
@@ -867,37 +876,34 @@ int createSettings(char const *argomenti[],int max){
 
         char scelta = getchar();
         clean_stdin();
-        printf("hai scelto: %c\n",scelta);
-        switch(scelta){
 
+        //printf("hai scelto: %c\n",scelta);
+        switch(scelta){
             case 'Y':
             
             case 'y':
-                //fclose(fp) NON mi fa chiudere in lettura prima di riaprire in scrittura...(FUNZIONA UGUALE)
                 FILE *fpSettings = fopen(FILE_USERS,"w");
-                if (fpSettings == NULL) {
-                    printf("Errore nell'apertura del file.\n");
-                    return 1;
-                }
-                printf("impostazioni salvate con successo!\n\n");
+                // questo si può cancellare perchè non ritorna mai nullo. "w" crea il file se non c'è
+                // if (fpSettings == NULL) {
+                //     printf("Errore nell'apertura del file.\n");
+                //     return 1;
+                // }
+                printf("Impostazioni salvate con successo!\n\n");
                 char hash[CONVERTION_SHA256_MAX];
                 inToSha256(admin.password,hash);
                 fprintf(fpSettings,"%s %s",admin.user, hash);
-                //fwrite(hash,sizeof(unsigned char),32,fpSettings);
 
                 fflush(fpSettings);
                 fclose(fpSettings);
                 return 1;
 
             default:
-                fclose(fp);
-                printf("impostazioni non salvate.\n");
+                printf("Impostazioni non salvate.\n");
                 return 0;
         }
     }
     fscanf(fp,"%s %s",cred.user,cred.password);
-    //printf("letti %s %s\n",cred.user,cred.password);
-    printf("impostazioni server caricate con successo!\n");
+    printf("Impostazioni server caricate con successo!\n");
     fclose(fp);
     return 1;
 }
