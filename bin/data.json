@@ -20,7 +20,7 @@
 		"name":	"daniele",
 		"surname":	"fallaci",
 		"age":	21,
-		"email":	"daniele.fallaci@mail.it",
+		"email":	"daniele.fallaci@edu.unifi.it",
 		"phone":	"111222"
 	}, {
 		"name":	"lucio",
@@ -35,15 +35,15 @@
 		"email":	"umberto89@mail.xyz",
 		"phone":	"99900088877"
 	}, {
-		"name":	"michele",
-		"surname":	"verdi",
-		"age":	18,
-		"email":	"michele.verdi@hotmail.com",
-		"phone":	"555666777"
-	}, {
 		"name":	"rosario",
 		"surname":	"verdi",
 		"age":	90,
 		"email":	"rosario.verdi@gmail.etx",
 		"phone":	"66998866"
+	}, {
+		"name":	"michele",
+		"surname":	"verdi",
+		"age":	18,
+		"email":	"michele.verdi@hotmail.com",
+		"phone":	"555666777"
 	}]
