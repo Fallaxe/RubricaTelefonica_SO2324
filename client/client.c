@@ -153,7 +153,7 @@ int main(int argc, char * argv[]) {
 
         // manda messaggio al server
         printf(">>\t");
-        fgets(buffer.message, strlen(buffer.message), stdin);
+        fgets(buffer.message, BUFFER_MAX, stdin);
         printf("\n");
 
         // se la stringa inviata è maggiore della dimensione permessa viene tagliata

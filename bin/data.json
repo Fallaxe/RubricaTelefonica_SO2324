@@ -2,7 +2,7 @@
 		"name":	"miranda",
 		"surname":	"bellezza",
 		"age":	30,
-		"email":	"miranda.bellezza@mail.it",
+		"email":	"miranda.bellezza@edu.unifi.it",
 		"phone":	"111222"
 	}, {
 		"name":	"paolo",
@@ -35,15 +35,15 @@
 		"email":	"umberto89@mail.xyz",
 		"phone":	"99900088877"
 	}, {
-		"name":	"rosario",
-		"surname":	"verdi",
-		"age":	90,
-		"email":	"rosario.verdi@gmail.etx",
-		"phone":	"66998866"
-	}, {
 		"name":	"michele",
 		"surname":	"verdi",
 		"age":	18,
 		"email":	"michele.verdi@hotmail.com",
 		"phone":	"555666777"
+	}, {
+		"name":	"rosario",
+		"surname":	"verdi",
+		"age":	90,
+		"email":	"rosario.verdi@gmail.etx",
+		"phone":	"66998866"
 	}]
