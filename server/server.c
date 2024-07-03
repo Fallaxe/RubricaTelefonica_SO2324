@@ -364,8 +364,8 @@ static cJSON *creaPersona(int connectSocket, MSG buffer)
         return NULL;
     } 
     else {
-        while(strlen(buffer.message) > 16 || utils_strIncludeOnly(buffer.message, "+ 1234567890") == 0){
-            strcpy(buffer.message, "Attenzione, massimo 16 caratteri e caratteri consentiti: '+ 1234567890'.\nInserire telefono del contatto :\t");
+        while(strlen(buffer.message) > 16 || utils_strIncludeOnly(buffer.message, " 1234567890") == 0){
+            strcpy(buffer.message, "Attenzione, massimo 16 caratteri e caratteri consentiti: ' 1234567890'.\nInserire telefono del contatto :\t");
             send(connectSocket,&buffer, sizeof(buffer),0);
 
             strcpy(buffer.message, "");
