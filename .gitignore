@@ -1,5 +1,4 @@
 *.[oa]
 *.txt
 .vscode/
-bin/
 build/
