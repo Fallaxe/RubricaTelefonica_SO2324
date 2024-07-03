@@ -1,8 +1,6 @@
 /*
-    -> ascolto connessioni
-    -> messaggio di benvenuto
-    -> la gestione delle varie connessioni è gestita da fork() e dai child
-    -> nelle scelte N è maiuscolo perchè è la scelta di default
+    7109803 Miranda Bellezza
+    7112588 Daniele Fallaci
 */
 
 #include "server.h"
@@ -16,7 +14,7 @@ static void customSigHandler(){
     }
     
     printf("\nprocesso figlio con pid %d terminato\n",getpid());
-    exit(1);
+    exit(0);
 }
 
 static void customSigPipeHandler(int signo){  
@@ -134,7 +132,6 @@ static cJSON * loadDatabase()
         char *fileContent = calloc((size + 1), sizeof(char));    
         fread(fileContent, sizeof(char), size, fp);
 
-        fflush(fp);
         fclose(fp);
 
         // parse della stringa json
@@ -155,7 +152,7 @@ static void saveDatabase(cJSON * jsonArray){
         FILE * fp = fopen(FILE_DB, "w"); 
         if (fp == NULL) { 
             printf("impossibile aprire il file dei dati\n"); 
-            exit(42);
+            exit(-1);
         }
         fputs(json_str, fp);
 
@@ -183,18 +180,16 @@ static int verifica(t_credenziali cred)
             inToSha256(cred.password,hashPSWinserita);
 
             if ((strcmp(cred.user, admin.user) == 0) && (strcmp(hashPSWadmin, hashPSWinserita) == 0)) {
-                login = 1;
-                printf("Login effettuato.\n");                     
+                login = 1;                   
                 break;                         
             }
         }
     }
-    if (login == 0) printf("Login non effettuato.\n");
     fclose(fptr);
     return login;
 }
 
-static MSG login(int connectSocket, MSG buffer){
+static MSG login(int connectSocket, char *clientIP, MSG buffer){
     if(buffer.isAdmin == 1) {
         strcpy(buffer.message, "Sei già loggato.\n");
         return buffer;
@@ -211,7 +206,7 @@ static MSG login(int connectSocket, MSG buffer){
         exit(-1);
     } else {
         strcpy(cred.user, buffer.message);
-        printf("Client - User: %s\n", buffer.message);
+        printf("Client @ %s : %d - User: %s\n", clientIP, connectSocket, buffer.message);
     }
 
     // Richiede Password
@@ -224,20 +219,25 @@ static MSG login(int connectSocket, MSG buffer){
         exit(-1);
     } else {
         strcpy(cred.password, buffer.message);
-        printf("Client - Password: %s\n", buffer.message);
+        printf("Client @ %s : %d - Password: %s\n", clientIP, connectSocket, buffer.message);
     }
 
+    // verifica user e password
     if (verifica(cred)) {
         buffer.isAdmin = 1;
         strcpy(buffer.message, "Login effettuato con successo.\n\n");
-    } else
+        printf("Client @ %s : %d - Login effettuato.\n", clientIP, connectSocket);
+    } else {
         strcpy(buffer.message, "Attenzione username o password errati.\n\n");
+        printf("Client @ %s : %d - Username o password errati.\n", clientIP, connectSocket);
+    }
 
     return buffer;
 }
 
 static void sendMenu(int connectSocket, MSG buffer)
 {
+    // banner
     strcat(buffer.message, divisore);
     strcat(buffer.message, menuHeader);
     strcat(buffer.message, divisore);
@@ -320,8 +320,8 @@ static cJSON *creaPersona(int connectSocket, MSG buffer)
         return NULL;
      } 
     else {
-        while(strcmp(buffer.message, "") != 0 && (atoi(buffer.message) > 100 || atoi(buffer.message) < 1)){
-            strcpy(buffer.message, "Attenzione, deve essere un numero tra 0 e 100.\nInserire eta del contatto :\t");
+        while(atoi(buffer.message) > 100 || atoi(buffer.message) < 1){
+            strcpy(buffer.message, "Attenzione, deve essere un numero tra 1 e 100.\nInserire eta del contatto :\t");
             send(connectSocket,&buffer, sizeof(buffer),0);
 
             strcpy(buffer.message, "");
@@ -330,10 +330,7 @@ static cJSON *creaPersona(int connectSocket, MSG buffer)
                 return NULL;
             } 
         }
-        if(strcmp(buffer.message, "") != 0)
-            cJSON_AddNumberToObject(jsonItem, "age", atoi(buffer.message));
-        else
-            cJSON_AddNumberToObject(jsonItem, "age", atoi(buffer.message));
+        cJSON_AddNumberToObject(jsonItem, "age", atoi(buffer.message));
     }
 
     strcpy(buffer.message, "Inserire email del contatto :\t");
@@ -427,7 +424,6 @@ static MSG printContent(cJSON * array, int connectSocket, char*clientIP,MSG buff
 
             // Stringa Contatto
             snprintf(elementString, sizeof(elementString), "%d) Nome: %s\n   Cognome: %s\n   Età: %d\n   Email: %s\n   Telefono: %s\n\n",i,cJSON_GetObjectItem(element,"name")->valuestring,cJSON_GetObjectItem(element,"surname")->valuestring,cJSON_GetObjectItem(element,"age")->valueint,cJSON_GetObjectItem(element,"email")->valuestring,cJSON_GetObjectItem(element,"phone")->valuestring); 
-            //printf("dimensioni elemento: %ld\n", strlen(elementString));
             strcat(buffer.message, elementString);
 
             // Fine pagina
@@ -460,7 +456,7 @@ static MSG printContent(cJSON * array, int connectSocket, char*clientIP,MSG buff
     return buffer;
 }
 
-static int removeFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffer)
+static int removeFromList(cJSON *found, cJSON* list,int connectSocket, char *clientIP, MSG buffer)
 {
     int num = -1;
     int nContacts = cJSON_GetArraySize(found);
@@ -470,6 +466,7 @@ static int removeFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffe
         strcat(buffer.message,"Inserisci l'indice del contatto da eliminare. x per tornare al menù\n");
         send(connectSocket,&buffer, sizeof(buffer), 0);
 
+        strcpy(buffer.message, "");
         if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0){
             printf("Errore nella ricezione dei dati.\n");
             return 0;
@@ -507,15 +504,15 @@ static int removeFromList(cJSON *found, cJSON* list,int connectSocket, MSG buffe
     if(strcmp(utils_lowercase(buffer.message), "y") != 0)
         return 0;
 
-    printf("Client - User: eliminazione di %s\n", cJSON_Print(element));
+    printf("Client @ %s : %d - eliminazione di %s\n", clientIP, connectSocket,cJSON_Print(element));
         
-    //cancella dall'array all'indirizzo selezionato
+    //cancella dall'array all'indice selezionato
     cJSON_DeleteItemFromArray(list,index);
     saveDatabase(list);
     return 1;
 }
 
-static int editFromList(cJSON *found, cJSON *list, int connectSocket, MSG buffer)
+static int editFromList(cJSON *found, cJSON *list, int connectSocket, char *clientIP, MSG buffer)
 {
     int num = -1;
     int nContacts = cJSON_GetArraySize(found);
@@ -525,6 +522,7 @@ static int editFromList(cJSON *found, cJSON *list, int connectSocket, MSG buffer
         strcat(buffer.message,"Inserisci l'indice del contatto da modificare. x per tornare al menù\n");
         send(connectSocket,&buffer, sizeof(buffer), 0);
 
+        strcpy(buffer.message, "");
         if((recv(connectSocket,&buffer,sizeof(buffer), 0)) < 0){
             printf("Errore nella ricezione dei dati.\n");
             return 0;
@@ -533,7 +531,6 @@ static int editFromList(cJSON *found, cJSON *list, int connectSocket, MSG buffer
         if (strcmp(utils_lowercase(buffer.message), "x") == 0)
             return 0;
         num = atoi(buffer.message);
-        //printf("hai digitato: %s, num: %d\n", buffer.message, num);
         strcpy(buffer.message, "");
     } while(num < 1 || num > nContacts);
 
@@ -564,19 +561,19 @@ static int editFromList(cJSON *found, cJSON *list, int connectSocket, MSG buffer
         return 0;
 
     //edit
-    printf("Client - User: modifica di %s\n", cJSON_Print(element));
+    printf("Client @ %s : %d - modifica di %s\n", clientIP, connectSocket,cJSON_Print(element));
     cJSON* nuovaPersona = creaPersona(connectSocket, buffer);
 
     if(nuovaPersona != NULL)
     {
-        printf("Client - User: modificato con %s\n", cJSON_Print(nuovaPersona));
+        printf("Client @ %s : %d - modificato con %s\n", clientIP, connectSocket,cJSON_Print(nuovaPersona));
         cJSON_ReplaceItemInArray(list,index,nuovaPersona);
         saveDatabase(list);
 
         cJSON_Delete(nuovaPersona);
         return 1;
     }
-    printf("Client - User: modifica annullata.\n");
+    printf("Client @ %s : %d - modifica annullata.\n", clientIP, connectSocket);
     cJSON_Delete(nuovaPersona);
     return 0;   
 }
@@ -615,6 +612,8 @@ static MSG search(int connectSocket, char*clientIP,MSG buffer, operationOnList o
     cJSON *element = jsonArray->child;
     char nameSurname[25];
     char surnameName[25];
+
+    // cerca se il nome inserito è sottostringa di "nome cognome" o "cognome nome"
     while (element)
     {
         snprintf(nameSurname, sizeof(nameSurname), "%s %s", cJSON_GetObjectItem(element,"name")->valuestring, cJSON_GetObjectItem(element,"surname")->valuestring);
@@ -635,7 +634,7 @@ static MSG search(int connectSocket, char*clientIP,MSG buffer, operationOnList o
         buffer = printContent(foundArr,connectSocket,clientIP,buffer);
             
         if(op != NULL)
-            strcpy(buffer.message, (op(foundArr,jsonArray,connectSocket, buffer)? "Modifica dei contatti effettuata.\n" : "Nessuna modifica effettuata\n"));
+            strcpy(buffer.message, (op(foundArr,jsonArray,connectSocket,clientIP, buffer)? "Modifica dei contatti effettuata.\n" : "Nessuna modifica effettuata\n"));
     }
     else
         strcpy(buffer.message, "Nessun contatto con questo nome.\n");
@@ -651,7 +650,7 @@ static int aggiungiPersona(int connectSocket, char *clientIP, MSG buffer){
             jsonArray = cJSON_CreateArray();
         }
 
-        if(cJSON_GetArraySize(jsonArray) >= RECORDS_MAX)
+        if(cJSON_GetArraySize(jsonArray) > RECORDS_MAX)
             return -1;
 
         cJSON* jsonItem = creaPersona(connectSocket, buffer);
@@ -690,7 +689,7 @@ static int choiseHandler(int connectSocket, char*clientIP, MSG buffer,sem_t *sem
         buffer = search(connectSocket,clientIP, buffer,NULL);
         break;
     case 'l':
-        buffer = login(connectSocket, buffer);
+        buffer = login(connectSocket, clientIP, buffer);
         break;
     case 'm':
         if (buffer.isAdmin){
@@ -826,7 +825,7 @@ static int choiseHandler(int connectSocket, char*clientIP, MSG buffer,sem_t *sem
     }
 
     // torna direttamente al menù
-    if(strlen(buffer.message) < 35) {
+    if(strlen(buffer.message) < 42) {  // se il buffer contiene una stringa singola es.("Attenzione username o password errati.") torna direttamente al menu.
         sendMenu(connectSocket, buffer);
         return 1;
     }
@@ -875,12 +874,6 @@ void main(int argc, char const *argv[])
     // creazione del socket
     if((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Errore nella creazione del socket.\n");
-        exit(-1);
-    }
-    
-    // settare comportamento del socket (SO_REUSEADDR)
-    if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0) {
-        perror("Errore in setsockopt(SO_REUSEADDR).\n");
         exit(-1);
     }
     

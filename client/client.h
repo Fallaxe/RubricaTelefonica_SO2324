@@ -1,3 +1,8 @@
+/*
+    7109803 Miranda Bellezza
+    7112588 Daniele Fallaci
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
@@ -31,19 +36,6 @@ typedef struct credenziali
 
 t_credenziali cred;
 int clientSocket;
-char *homeChar = "h";
-char *loginChar = "l";
-char *loginArg = "-a";
-
-// funzioni
-// static void login(int socket, MSG buffer);
-// static int parser(char *argomenti[]);
-// static void requestHome(int socket, MSG buffer);
-
-// // gestione segnali
-// static void customSigHandler(); // interruzione: ctrl+C
-// static void sigpipe_handler(int signo); // server chiude la connessione
-
-// // pulizia stdin
-// static int check_stdin();
-// static void clean_stdin();
+char *homeChar = "h";  // utilizzato per la richiesta di home al server
+char *loginChar = "l"; // utilizzato per la richiesta di login al server
+char *loginArg = "-a"; // FLAG di utilizzo per il login diretto

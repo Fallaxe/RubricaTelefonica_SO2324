@@ -1,3 +1,8 @@
+/*
+    7109803 Miranda Bellezza
+    7112588 Daniele Fallaci
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

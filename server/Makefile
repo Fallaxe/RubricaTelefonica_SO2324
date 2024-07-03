@@ -1,3 +1,6 @@
+#     7109803 Miranda Bellezza
+#     7112588 Daniele Fallaci
+
 OUT_DIR := ../build
 BIN_DIR := ../bin
 cJSON_DIR := ../vendor/cjson

@@ -1,3 +1,8 @@
+/*
+    7109803 Miranda Bellezza
+    7112588 Daniele Fallaci
+*/
+
 #include "client.h"
 
 // Gestione dei segnali
@@ -37,24 +42,6 @@ static void clean_stdin() {
             fgets(buffer, sizeof(buffer), stdin);
     }
 }
-
-// Gestione argomenti
-// static int parser(char *argomenti[],int max) {
-//     int i;
-
-//     for (i = 1; i < max-2; i++)
-//     {
-//         if(strcmp(argomenti[i], loginArg) == 0){
-//             strcpy(cred.user,argomenti[i+1]);
-//             strcpy(cred.password, argomenti[i+2]);
-//             break;
-//         }
-//     }
-//     if(i == max-2)
-//         return 0;
-
-//     return 1;
-// }
 
 // Gestione argomenti
 static int parser(char *argomenti[]) {
