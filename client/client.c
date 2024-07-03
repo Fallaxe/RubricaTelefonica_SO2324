@@ -35,11 +35,11 @@ static int check_stdin()
 
 static void clean_stdin() {
     if(check_stdin()) {
-        char buffer[1024];
+        char buffer[BUFFER_MAX];
 
         while(check_stdin())
             // se ci sono righe piene le legge una alla volta
-            fgets(buffer, sizeof(buffer), stdin);
+            fgets(buffer, BUFFER_MAX, stdin);
     }
 }
 
