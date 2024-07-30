@@ -3,7 +3,7 @@
 ## server
 To use the server you must have openssl installed.
 navigate to server/ directory and run "make" to compile the server\
-If your project doesn't compile you might run
+If your project doesn't compile you might run **make deps** first.
 ``` markdown
 cd server/
 make deps
