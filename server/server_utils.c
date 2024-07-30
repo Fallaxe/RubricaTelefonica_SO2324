@@ -37,7 +37,7 @@ static void hashToHexString(const unsigned char *hash, int length, char *output)
         * infatti 1 byte = 8 bit
         * come maschera usiamo 0xF = 1111 
         */ 
-        output[i * 2] = hexChars[(hash[i] >> 4) & 0xF];
+        output[i * 2] = hexChars[(hash[i] >> 4) & 0xF];  //<-- and con 0xF non necessario qua ma mantenuto per "errore alla consegna", si segnala lo stesso la sua inutilità
         output[i * 2 + 1] = hexChars[hash[i] & 0xF];
     }
     output[length * 2] = '\0'; // determinare la fine della stringa
