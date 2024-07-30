@@ -11,7 +11,7 @@ make
 ```
 server's makefile has also **make run** and **make clean**
 
-The first boot of server it will generate the settings.txt file with user and password(hashed)
+The first boot of the server it will generate the settings.txt file with user and password(hashed)
 You can reset user and password with
 ``` markdown
 cd bin/
