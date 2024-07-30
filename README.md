@@ -2,7 +2,7 @@
 
 ## server
 To use the server you must have openssl installed.
-navigate to /server/ directory and run "make" to compile the server\
+navigate to server/ directory and run "make" to compile the server\
 If your project doesn't compile you might run
 ``` markdown
 cd server/
@@ -20,7 +20,7 @@ server -r
 The server use cJSON library from his github repository
 
 ## client
-To compile the client and use it, navigate to /client/ and run "make".
+To compile the client and use it, navigate to client/ directory and run "make".
 ``` markdown
 cd  client/
 make
